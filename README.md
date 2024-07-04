@@ -7,7 +7,7 @@ Please download private library: [coffee_database] (http://gofile.me/3Rex9/rZ8So
 Please see the README.md in the folder and use pip to install it first.
 After installation, use following command to install necessary modules.  
 
-```console
+```bash
 pip3 install -r requirements.txt
 ```
 
@@ -57,5 +57,13 @@ The finetuend model please refer Fintuning the LLMs part.
 python3 embeddings_from_finetuned.py 
 python3 models_evaluation.py finetuned 
 ```
+
+## Needed developed models
+
+### Large models (6-8B, latest)
+
+- LLAMA3
+- Gemma2
+- Qwen2
 
 

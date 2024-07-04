@@ -6,12 +6,12 @@ import pandas as pd
 
 import torch
 from datasets import Dataset
-from transformers import (GPT2Tokenizer,
-                          GPT2ForSequenceClassification,
+from transformers import (T5Tokenizer,
+                          T5ForSequenceClassification,
                           Trainer,
                           TrainingArguments)
 
-from src.models import GPT2_NAME
+from src.models import T5_NAME
 from src.utils import parse_training_args
 
 def main():
@@ -19,9 +19,9 @@ def main():
     parser.add_argument('training_argument', type = str,
             help = 'Path of the finetuning arguments')
 
-    parser.add_argument('--model_select', type = str, default = GPT2_NAME,
+    parser.add_argument('--model_select', type = str, default = T5_NAME,
             help = 'The GPT2 version you want to choose.')
-    parser.add_argument('--model_name', type = str, default = 'finetuned-' + GPT2_NAME,
+    parser.add_argument('--model_name', type = str, default = 'finetuned-' + T5_NAME,
             help = 'The saved name of the finetuned model.')
     parser.add_argument('--device', type = str, default = 'auto',
             help = 'Select the computing device.')
@@ -83,16 +83,17 @@ def main():
     eval_dataset = Dataset.from_pandas(eval_df)
     print('Start process dataset ...')
 
-    tokenizer = GPT2Tokenizer.from_pretrained(args.model_select)
-    tokenizer.pad_token = tokenizer.eos_token
-    def preprocess_function(examples):
-        inputs = [f"{examples['text0'][i]} {tokenizer.eos_token}" + \
-                  f"{examples['text1'][i]} {tokenizer.eos_token}" + \
-                  f"{examples['text2'][i]} {tokenizer.eos_token}" + \
-                  f"{examples['text3'][i]} {tokenizer.eos_token}" + \
-                  f"{examples['text4'][i]} {tokenizer.eos_token}" for i in range(len(examples['text0']))]
+    tokenizer = T5Tokenizer.from_pretrained(args.model_select,
+                                            legacy = False)
 
-        tokenized_inputs = tokenizer(inputs, truncation = True, 
+    def preprocess_function(examples):
+        inputs = [f"{examples['text0'][i]} {tokenizer.sep_token}" + \
+                  f"{examples['text1'][i]} {tokenizer.sep_token}" + \
+                  f"{examples['text2'][i]} {tokenizer.sep_token}" + \
+                  f"{examples['text3'][i]} {tokenizer.sep_token}" + \
+                  f"{examples['text4'][i]} {tokenizer.sep_token}" for i in range(len(examples['text0']))]
+
+        tokenized_inputs = tokenizer(inputs, truncation = True,
                 padding = 'max_length', max_length = padding_length)
 
         tokenized_inputs['labels'] = examples['ground_truth']
@@ -105,13 +106,11 @@ def main():
     eval_dataset.set_format('torch', columns=['input_ids', 'attention_mask', 'labels'])
 
     print('Dataset prepare done.')
-    print('Load pre-trained GPT-2 ...')
+    print('Load pre-trained T5 ...')
+    model = T5ForSequenceClassification.from_pretrained(args.model_select,
+                                                        num_labels = 5).to(device)
 
-    model = GPT2ForSequenceClassification.from_pretrained(args.model_select, 
-                                                          num_labels = 5).to(device)
-    model.config.pad_token_id = 50256
-
-    print('Start finetune GPT-2 ...')
+    print('Start finetune T5 ...')
     training_args = TrainingArguments(output_dir = folder_name,
                                       eval_strategy = 'epoch',
                                       learning_rate = base_lr,
@@ -145,9 +144,9 @@ def main():
     base_model_path = os.path.join(folder_name, saved_model_name)
     print('Basic model is saved at {0}'.format(base_model_path))
     tokenizer.save_pretrained(base_model_path)
-    model.transformer.save_pretrained(base_model_path)
+    model.base_model.save_pretrained(base_model_path)
 
-    print('Finish GPT-2 fine-tuning.')
+    print('Finish T5 fine-tuning.')
 
     return None
 

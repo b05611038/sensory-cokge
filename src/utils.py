@@ -1,9 +1,10 @@
 import os
+import yaml
 import json
 import pickle
 
 __all__ = ['init_directory', 'save_object', 'load_pickle_obj', 'load_json_obj',
-        'use_a_or_an']
+        'use_a_or_an', 'parse_training_args']
 
 def init_directory(path):
     assert isinstance(path, str)
@@ -76,5 +77,16 @@ def use_a_or_an(word):
         return "an"
     else:
         return "a"
+
+def parse_training_args(args_path):
+    if not os.path.isfile(args_path):
+        raise OSError('Cannot detect training argument file: {0}'.format(args_path))
+
+    args = None
+    with open(args_path) as f:
+        args = yaml.load(f, Loader = yaml.FullLoader)
+        f.close()
+
+    return args
 
 

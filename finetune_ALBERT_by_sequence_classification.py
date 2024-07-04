@@ -6,12 +6,12 @@ import pandas as pd
 
 import torch
 from datasets import Dataset
-from transformers import (GPT2Tokenizer,
-                          GPT2ForSequenceClassification,
+from transformers import (AlbertTokenizer,
+                          AlbertForSequenceClassification,
                           Trainer,
                           TrainingArguments)
 
-from src.models import GPT2_NAME
+from src.models import ALBERT_NAME
 from src.utils import parse_training_args
 
 def main():
@@ -19,9 +19,9 @@ def main():
     parser.add_argument('training_argument', type = str,
             help = 'Path of the finetuning arguments')
 
-    parser.add_argument('--model_select', type = str, default = GPT2_NAME,
-            help = 'The GPT2 version you want to choose.')
-    parser.add_argument('--model_name', type = str, default = 'finetuned-' + GPT2_NAME,
+    parser.add_argument('--model_select', type = str, default = ALBERT_NAME,
+            help = 'The BERT version you want to choose.')
+    parser.add_argument('--model_name', type = str, default = 'finetuned-' + ALBERT_NAME,
             help = 'The saved name of the finetuned model.')
     parser.add_argument('--device', type = str, default = 'auto',
             help = 'Select the computing device.')
@@ -65,7 +65,6 @@ def main():
         sys.exit(0)
 
     per_device_batch_size = training_args.get('per_device_batch_size', 16)
-    padding_length = training_args.get('padding_length', 256)
     base_lr = training_args.get('base_lr', 1e-5)
     weight_decay = training_args.get('weight_decay', 0.01)
     cuda_amp = training_args.get('cuda_amp', False)
@@ -83,18 +82,13 @@ def main():
     eval_dataset = Dataset.from_pandas(eval_df)
     print('Start process dataset ...')
 
-    tokenizer = GPT2Tokenizer.from_pretrained(args.model_select)
-    tokenizer.pad_token = tokenizer.eos_token
+    tokenizer = AlbertTokenizer.from_pretrained(args.model_select)
     def preprocess_function(examples):
-        inputs = [f"{examples['text0'][i]} {tokenizer.eos_token}" + \
-                  f"{examples['text1'][i]} {tokenizer.eos_token}" + \
-                  f"{examples['text2'][i]} {tokenizer.eos_token}" + \
-                  f"{examples['text3'][i]} {tokenizer.eos_token}" + \
-                  f"{examples['text4'][i]} {tokenizer.eos_token}" for i in range(len(examples['text0']))]
+        inputs = [f"{examples['text0'][i]} [SEP] {examples['text1'][i]} [SEP] " + \
+                  f"{examples['text2'][i]} [SEP] {examples['text3'][i]} [SEP] " + \
+                  f"{examples['text4'][i]}" for i in range(len(examples['text0']))]
 
-        tokenized_inputs = tokenizer(inputs, truncation = True, 
-                padding = 'max_length', max_length = padding_length)
-
+        tokenized_inputs = tokenizer(inputs, truncation = True, padding = True)
         tokenized_inputs['labels'] = examples['ground_truth']
         return tokenized_inputs
 
@@ -105,13 +99,11 @@ def main():
     eval_dataset.set_format('torch', columns=['input_ids', 'attention_mask', 'labels'])
 
     print('Dataset prepare done.')
-    print('Load pre-trained GPT-2 ...')
+    print('Load pre-trained ALBERT ...')
+    model = AlbertForSequenceClassification.from_pretrained(args.model_select,
+                                                            num_labels = 5).to(device)
 
-    model = GPT2ForSequenceClassification.from_pretrained(args.model_select, 
-                                                          num_labels = 5).to(device)
-    model.config.pad_token_id = 50256
-
-    print('Start finetune GPT-2 ...')
+    print('Start finetune ALBERT ...')
     training_args = TrainingArguments(output_dir = folder_name,
                                       eval_strategy = 'epoch',
                                       learning_rate = base_lr,
@@ -145,10 +137,9 @@ def main():
     base_model_path = os.path.join(folder_name, saved_model_name)
     print('Basic model is saved at {0}'.format(base_model_path))
     tokenizer.save_pretrained(base_model_path)
-    model.transformer.save_pretrained(base_model_path)
+    model.albert.save_pretrained(base_model_path)
 
-    print('Finish GPT-2 fine-tuning.')
-
+    print('Finish ALBERT fine-tuning.')
     return None
 
 if __name__ == '__main__':

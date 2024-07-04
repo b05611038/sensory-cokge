@@ -1,0 +1,13 @@
+# I/O arguments
+extended_name: 'example'
+model_folder: './finetuned_models'
+train_csv: './outputs/train.csv'
+eval_csv: './outputs/eval.csv'
+
+# Finetune process arguments
+epochs: 5
+per_device_batch_size: 16
+padding_length: 256
+base_lr: 0.00001
+weight_decay: 0.01
+cuda_amp: True

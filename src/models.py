@@ -3,17 +3,28 @@ import os
 import torch
 from torch.utils.data import DataLoader, Dataset
 
-from transformers import (BertTokenizer, 
+from transformers import (AlbertTokenizer,
+                          AlbertModel,
+                          BertTokenizer, 
                           BertModel,
                           BartTokenizer, 
                           BartModel,
                           GPT2Tokenizer, 
-                          GPT2Model)
+                          GPT2Model,
+                          RobertaTokenizer,
+                          RobertaModel,
+                          T5Tokenizer,
+                          T5Model)
 
 from .utils import use_a_or_an
 
-__all__ = ['BERT_embeddings', 'BART_embeddings', 'GPT2_embeddings',
-        'BERT_NAME', 'BART_NAME', 'GPT_NAME']
+__all__ = ['ALBERT_NAME', 'ALBERT_embeddings',
+           'BERT_NAME', 'BERT_embeddings',
+           'BART_NAME', 'BART_embeddings',
+           'GPT2_NAME', 'GPT2_embeddings',
+           'RoBERTa_NAME', 'RoBERTa_embeddings',
+           'T5_NAME', 'T5_embeddings']
+
 
 CONTEXT = 'This cup of coffee has {0} {1} flavor.'
 TOKEN_ARGS = {
@@ -23,9 +34,12 @@ TOKEN_ARGS = {
         'max_length': 64,
 }
 
+ALBERT_NAME = 'albert-base-v2'
 BERT_NAME = 'bert-base-uncased'
 BART_NAME = 'facebook/bart-base'
-GPT_NAME = 'gpt2'
+GPT2_NAME = 'gpt2'
+RoBERTa_NAME = 'roberta-base'
+T5_NAME = 't5-base'
 
 class TextDataset(Dataset):
     def __init__(self, texts, tokenizer, 
@@ -41,6 +55,55 @@ class TextDataset(Dataset):
     def __getitem__(self, idx):
         return self.tokenizer(self.texts[idx], **self.tokenizer_arguments) 
 
+
+def ALBERT_embeddings(descriptions,
+        batch_size = 4,
+        device = torch.device('cpu'),
+        context = CONTEXT,
+        finetuned_model = None):
+
+    embeddings, texts = {}, []
+    for des_idx in range(len(descriptions)):
+        description = descriptions[des_idx]
+        text = context.format(use_a_or_an(description), description)
+        texts.append(text)
+        embeddings[des_idx] = {'description': description,
+                               'text': text}
+
+    if finetuned_model is None:
+        tokenizer = AlbertTokenizer.from_pretrained(ALBERT_NAME)
+        model = AlbertModel.from_pretrained(ALBERT_NAME)
+    else:
+        if not os.path.isdir(finetuned_model):
+            raise OSError('Cannot find model: {0}'.format(finetuned_model))
+
+        tokenizer = AlbertTokenizer.from_pretrained(finetuned_model)
+        model = AlbertModel.from_pretrained(finetuned_model)
+
+    model = model.to(device)
+
+    dataset = TextDataset(texts, tokenizer)
+    dataloader = DataLoader(dataset, batch_size = batch_size, shuffle = False)
+
+    running_idx = 0
+    for batch_data in dataloader:
+        input_ids = batch_data['input_ids'].squeeze(1).to(device)
+        attention_mask = batch_data['attention_mask'].squeeze(1).to(device)
+
+
+        with torch.no_grad():
+            outputs = model(input_ids = input_ids,
+                            attention_mask = attention_mask)
+
+            last_token_indices = attention_mask.sum(dim = 1) - 1
+            last_hidden_states = outputs.last_hidden_state
+            for mini_idx in range(last_token_indices.shape[0]):
+                    seq_length = int(last_token_indices[mini_idx])
+                    last_embedding = last_hidden_states[mini_idx, seq_length, :].cpu()
+                    embeddings[running_idx]['encoder_embedding'] = last_embedding
+                    running_idx += 1
+
+    return embeddings
 
 def BERT_embeddings(descriptions, 
         batch_size = 4, 
@@ -154,8 +217,8 @@ def GPT2_embeddings(descriptions,
                                'text': text}
 
     if finetuned_model is None:
-        tokenizer = GPT2Tokenizer.from_pretrained(GPT_NAME)
-        model = GPT2Model.from_pretrained(GPT_NAME)
+        tokenizer = GPT2Tokenizer.from_pretrained(GPT2_NAME)
+        model = GPT2Model.from_pretrained(GPT2_NAME)
     else:
         if not os.path.isdir(finetuned_model):
             raise OSError('Cannot find model: {0}'.format(finetuned_model))
@@ -181,6 +244,113 @@ def GPT2_embeddings(descriptions,
             for mini_idx in range(last_token_indices.shape[0]):
                 seq_length = int(last_token_indices[mini_idx])
                 last_decoder_embedding = last_hidden_state[mini_idx, seq_length, :].cpu()
+                embeddings[running_idx]['decoder_embedding'] = last_decoder_embedding
+                running_idx += 1
+
+    return embeddings
+
+def RoBERTa_embeddings(descriptions,
+        batch_size = 4,
+        device = torch.device('cpu'),
+        context = CONTEXT,
+        finetuned_model = None):
+
+    embeddings, texts = {}, []
+    for des_idx in range(len(descriptions)):
+        description = descriptions[des_idx]
+        text = context.format(use_a_or_an(description), description)
+        texts.append(text)
+        embeddings[des_idx] = {'description': description,
+                               'text': text}
+
+    if finetuned_model is None:
+        tokenizer = RobertaTokenizer.from_pretrained(RoBERTa_NAME)
+        model = RobertaModel.from_pretrained(RoBERTa_NAME)
+    else:
+        if not os.path.isdir(finetuned_model):
+            raise OSError('Cannot find model: {0}'.format(finetuned_model))
+
+        tokenizer = RobertaTokenizer.from_pretrained(finetuned_model)
+        model = RobertaModel.from_pretrained(finetuned_model)
+
+    model = model.to(device)
+
+    dataset = TextDataset(texts, tokenizer)
+    dataloader = DataLoader(dataset, batch_size = batch_size, shuffle = False)
+
+    running_idx = 0
+    for batch_data in dataloader:
+        input_ids = batch_data['input_ids'].squeeze(1).to(device)
+        attention_mask = batch_data['attention_mask'].squeeze(1).to(device)
+
+
+        with torch.no_grad():
+            outputs = model(input_ids = input_ids,
+                            attention_mask = attention_mask)
+
+            last_token_indices = attention_mask.sum(dim = 1) - 1
+            last_hidden_states = outputs.last_hidden_state
+            for mini_idx in range(last_token_indices.shape[0]):
+                    seq_length = int(last_token_indices[mini_idx])
+                    last_embedding = last_hidden_states[mini_idx, seq_length, :].cpu()
+                    embeddings[running_idx]['encoder_embedding'] = last_embedding
+                    running_idx += 1
+
+    return embeddings
+
+def T5_embeddings(descriptions,
+        batch_size = 4,
+        device = torch.device('cpu'),
+        context = CONTEXT,
+        finetuned_model = None):
+
+    embeddings, texts = {}, []
+    for des_idx in range(len(descriptions)):
+        description = descriptions[des_idx]
+        text = context.format(use_a_or_an(description), description)
+        texts.append(text)
+        embeddings[des_idx] = {'description': description,
+                               'text': text}
+
+    if finetuned_model is None:
+        tokenizer = T5Tokenizer.from_pretrained(T5_NAME, legacy = False)
+        model = T5Model.from_pretrained(T5_NAME)
+    else:
+        if not os.path.isdir(finetuned_model):
+            raise OSError('Cannot find model: {0}'.format(finetuned_model))
+
+        tokenizer = T5Tokenizer.from_pretrained(finetuned_model, legacy = False)
+        model = T5Model.from_pretrained(finetuned_model)
+
+    dataset = TextDataset(texts, tokenizer)
+    dataloader = DataLoader(dataset, batch_size = batch_size, shuffle = False)
+
+    running_idx = 0
+    for batch_data in dataloader:
+        input_ids = batch_data['input_ids'].squeeze(1).to(device)
+        attention_mask = batch_data['attention_mask'].squeeze(1).to(device)
+
+        with torch.no_grad():
+            decoder_input_id = tokenizer.encode('summarize:',
+                                                return_tensors = TOKEN_ARGS['return_tensors'])
+
+            decoder_input_id = decoder_input_id
+            decoder_input_ids = [decoder_input_id for _ in range(input_ids.shape[0])]
+            decoder_input_ids = torch.cat(decoder_input_ids, dim = 0).to(device)
+            last_token_indices = attention_mask.sum(dim = 1) - 1
+
+            outputs = model(input_ids = input_ids,
+                            decoder_input_ids = decoder_input_ids,
+                            attention_mask = attention_mask)
+
+            encoder_last_hidden_state = outputs.encoder_last_hidden_state
+            decoder_last_hidden_state = outputs.last_hidden_state
+            for mini_idx in range(last_token_indices.shape[0]):
+                seq_length = int(last_token_indices[mini_idx])
+                decoded_seq_length = decoder_last_hidden_state.shape[1] - 1
+                last_encoder_embedding = encoder_last_hidden_state[mini_idx, seq_length, :].cpu()
+                last_decoder_embedding = decoder_last_hidden_state[mini_idx, decoded_seq_length, :].cpu()
+                embeddings[running_idx]['encoder_embedding'] = last_encoder_embedding
                 embeddings[running_idx]['decoder_embedding'] = last_decoder_embedding
                 running_idx += 1
 
