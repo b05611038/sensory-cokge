@@ -60,6 +60,7 @@ def ALBERT_embeddings(descriptions,
         batch_size = 4,
         device = torch.device('cpu'),
         context = CONTEXT,
+        pretrained_model = ALBERT_NAME,
         finetuned_model = None):
 
     embeddings, texts = {}, []
@@ -71,8 +72,8 @@ def ALBERT_embeddings(descriptions,
                                'text': text}
 
     if finetuned_model is None:
-        tokenizer = AlbertTokenizer.from_pretrained(ALBERT_NAME)
-        model = AlbertModel.from_pretrained(ALBERT_NAME)
+        tokenizer = AlbertTokenizer.from_pretrained(pretrained_model)
+        model = AlbertModel.from_pretrained(pretrained_model)
     else:
         if not os.path.isdir(finetuned_model):
             raise OSError('Cannot find model: {0}'.format(finetuned_model))
@@ -109,6 +110,7 @@ def BERT_embeddings(descriptions,
         batch_size = 4, 
         device = torch.device('cpu'),
         context = CONTEXT,
+        pretrained_model = BERT_NAME,
         finetuned_model = None):
 
     embeddings, texts = {}, []
@@ -120,8 +122,8 @@ def BERT_embeddings(descriptions,
                                'text': text}
 
     if finetuned_model is None:
-        tokenizer = BertTokenizer.from_pretrained(BERT_NAME)
-        model = BertModel.from_pretrained(BERT_NAME)
+        tokenizer = BertTokenizer.from_pretrained(pretrained_model)
+        model = BertModel.from_pretrained(pretrained_model)
     else:
         if not os.path.isdir(finetuned_model):
             raise OSError('Cannot find model: {0}'.format(finetuned_model))
@@ -157,6 +159,7 @@ def BART_embeddings(descriptions,
         batch_size = 4,
         device = torch.device('cpu'),
         context = CONTEXT,
+        pretrained_model = BART_NAME,
         finetuned_model = None):
 
     embeddings, texts = {}, []
@@ -168,8 +171,8 @@ def BART_embeddings(descriptions,
                                'text': text}
 
     if finetuned_model is None:
-        tokenizer = BartTokenizer.from_pretrained(BART_NAME)
-        model = BartModel.from_pretrained(BART_NAME)
+        tokenizer = BartTokenizer.from_pretrained(pretrained_model)
+        model = BartModel.from_pretrained(pretrained_model)
     else:
         if not os.path.isdir(finetuned_model):
             raise OSError('Cannot find model: {0}'.format(finetuned_model))
@@ -206,6 +209,7 @@ def GPT2_embeddings(descriptions,
         batch_size = 4,
         device = torch.device('cpu'),
         context = CONTEXT,
+        pretrained_model = GPT2_NAME, 
         finetuned_model = None):
 
     embeddings, texts = {}, []
@@ -217,8 +221,8 @@ def GPT2_embeddings(descriptions,
                                'text': text}
 
     if finetuned_model is None:
-        tokenizer = GPT2Tokenizer.from_pretrained(GPT2_NAME)
-        model = GPT2Model.from_pretrained(GPT2_NAME)
+        tokenizer = GPT2Tokenizer.from_pretrained(pretrained_model)
+        model = GPT2Model.from_pretrained(pretrained_model)
     else:
         if not os.path.isdir(finetuned_model):
             raise OSError('Cannot find model: {0}'.format(finetuned_model))
@@ -253,6 +257,7 @@ def RoBERTa_embeddings(descriptions,
         batch_size = 4,
         device = torch.device('cpu'),
         context = CONTEXT,
+        pretrained_model = RoBERTa_NAME,
         finetuned_model = None):
 
     embeddings, texts = {}, []
@@ -264,8 +269,8 @@ def RoBERTa_embeddings(descriptions,
                                'text': text}
 
     if finetuned_model is None:
-        tokenizer = RobertaTokenizer.from_pretrained(RoBERTa_NAME)
-        model = RobertaModel.from_pretrained(RoBERTa_NAME)
+        tokenizer = RobertaTokenizer.from_pretrained(pretrained_model)
+        model = RobertaModel.from_pretrained(pretrained_model)
     else:
         if not os.path.isdir(finetuned_model):
             raise OSError('Cannot find model: {0}'.format(finetuned_model))
@@ -302,6 +307,7 @@ def T5_embeddings(descriptions,
         batch_size = 4,
         device = torch.device('cpu'),
         context = CONTEXT,
+        pretrained_model = T5_NAME,
         finetuned_model = None):
 
     embeddings, texts = {}, []
@@ -313,8 +319,8 @@ def T5_embeddings(descriptions,
                                'text': text}
 
     if finetuned_model is None:
-        tokenizer = T5Tokenizer.from_pretrained(T5_NAME, legacy = False)
-        model = T5Model.from_pretrained(T5_NAME)
+        tokenizer = T5Tokenizer.from_pretrained(pretrained_model, legacy = False)
+        model = T5Model.from_pretrained(pretrained_model)
     else:
         if not os.path.isdir(finetuned_model):
             raise OSError('Cannot find model: {0}'.format(finetuned_model))
