@@ -95,7 +95,9 @@ def main():
         tokenized_inputs = tokenizer(inputs, truncation = True, 
                 padding = 'max_length', max_length = padding_length)
 
-        tokenized_inputs['labels'] = examples['ground_truth']
+        tokenized_inputs['labels'] = torch.tensor(examples['ground_truth'],
+                dtype = torch.int32)
+
         return tokenized_inputs
 
     train_dataset = train_dataset.map(preprocess_function, batched = True)
