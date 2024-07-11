@@ -36,7 +36,7 @@ def layout_data(data, filename):
 def main():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--train_sample_number', type = int, default = 50000,
+    parser.add_argument('--train_sample_number', type = int, default = 100000,
             help = 'The training sample number generated in the csv file.')
     parser.add_argument('--eval_sample_number', type = int, default = 10000,
             help = 'The evaluating sample number generated in the csv file.')

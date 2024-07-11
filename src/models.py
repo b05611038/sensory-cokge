@@ -5,12 +5,18 @@ from torch.utils.data import DataLoader, Dataset
 
 from transformers import (AlbertTokenizer,
                           AlbertModel,
+                          AutoTokenizer,
                           BertTokenizer, 
                           BertModel,
                           BartTokenizer, 
                           BartModel,
+                          Gemma2Model,
                           GPT2Tokenizer, 
                           GPT2Model,
+                          LlamaTokenizer,
+                          LlamaModel,
+                          Qwen2Model,
+                          Qwen2Tokenizer,
                           RobertaTokenizer,
                           RobertaModel,
                           T5Tokenizer,
@@ -21,7 +27,10 @@ from .utils import use_a_or_an
 __all__ = ['ALBERT_NAME', 'ALBERT_embeddings',
            'BERT_NAME', 'BERT_embeddings',
            'BART_NAME', 'BART_embeddings',
+           'GEMMA2_NAME', 'Gemma2_embeddings',
            'GPT2_NAME', 'GPT2_embeddings',
+           'LLAMA3_NAME', 'Llama3_embeddings',
+           'QWEN2_NAME', 'Qwen2_embeddings',
            'RoBERTa_NAME', 'RoBERTa_embeddings',
            'T5_NAME', 'T5_embeddings']
 
@@ -37,7 +46,10 @@ TOKEN_ARGS = {
 ALBERT_NAME = 'albert-base-v2'
 BERT_NAME = 'bert-base-uncased'
 BART_NAME = 'facebook/bart-base'
+GEMMA2_NAME = './gemma-2-9b'
 GPT2_NAME = 'gpt2'
+LLAMA3_NAME = 'meta-llama/Meta-Llama-3-8B'
+QWEN2_NAME = ''
 RoBERTa_NAME = 'roberta-base'
 T5_NAME = 't5-base'
 
@@ -205,6 +217,46 @@ def BART_embeddings(descriptions,
 
     return embeddings
 
+def Gemma2_embeddings(descriptions,
+        batch_size = 1,
+        device = torch.device('cpu'),
+        context = CONTEXT,
+        pretrained_model = GEMMA2_NAME):
+
+    embeddings, texts = {}, []
+    for des_idx in range(len(descriptions)):
+        description = descriptions[des_idx]
+        text = context.format(use_a_or_an(description), description)
+        texts.append(text)
+        embeddings[des_idx] = {'description': description,
+                               'text': text}
+
+    tokenizer = AutoTokenizer.from_pretrained(pretrained_model)
+    model = Gemma2Model.from_pretrained(pretrained_model)
+
+    dataset = TextDataset(texts, tokenizer)
+    dataloader = DataLoader(dataset, batch_size = batch_size, shuffle = False)
+
+    running_idx = 0
+    for batch_data in dataloader:
+        input_ids = batch_data['input_ids'].squeeze(1).to(device)
+        attention_mask = batch_data['attention_mask'].squeeze(1).to(device)
+
+        with torch.no_grad():
+            outputs = model(input_ids = input_ids,
+                            attention_mask = attention_mask)
+
+            last_token_indices = attention_mask.sum(dim = 1) - 1
+            decoder_last_hidden_state = outputs.last_hidden_state
+            for mini_idx in range(last_token_indices.shape[0]):
+                seq_length = int(last_token_indices[mini_idx])
+                last_decoder_embedding = decoder_last_hidden_state[mini_idx, seq_length, :].cpu()
+                embeddings[running_idx]['decoder_embedding'] = last_decoder_embedding
+                running_idx += 1
+
+    return embeddings
+
+
 def GPT2_embeddings(descriptions,
         batch_size = 4,
         device = torch.device('cpu'),
@@ -248,6 +300,86 @@ def GPT2_embeddings(descriptions,
             for mini_idx in range(last_token_indices.shape[0]):
                 seq_length = int(last_token_indices[mini_idx])
                 last_decoder_embedding = last_hidden_state[mini_idx, seq_length, :].cpu()
+                embeddings[running_idx]['decoder_embedding'] = last_decoder_embedding
+                running_idx += 1
+
+    return embeddings
+
+
+def Llama3_embeddings(descriptions,
+        batch_size = 1,
+        device = torch.device('cpu'),
+        context = CONTEXT,
+        pretrained_model = LLAMA3_NAME):
+
+    embeddings, texts = {}, []
+    for des_idx in range(len(descriptions)):
+        description = descriptions[des_idx]
+        text = context.format(use_a_or_an(description), description)
+        texts.append(text)
+        embeddings[des_idx] = {'description': description,
+                               'text': text}
+
+    tokenizer = LlamaTokenizer.from_pretrained(pretrained_model)
+    model = LlamaModel.from_pretrained(pretrained_model)
+
+    dataset = TextDataset(texts, tokenizer)
+    dataloader = DataLoader(dataset, batch_size = batch_size, shuffle = False)
+
+    running_idx = 0
+    for batch_data in dataloader:
+        input_ids = batch_data['input_ids'].squeeze(1).to(device)
+        attention_mask = batch_data['attention_mask'].squeeze(1).to(device)
+
+        with torch.no_grad():
+            outputs = model(input_ids = input_ids,
+                            attention_mask = attention_mask)
+
+            last_token_indices = attention_mask.sum(dim = 1) - 1
+            decoder_last_hidden_state = outputs.last_hidden_state
+            for mini_idx in range(last_token_indices.shape[0]):
+                seq_length = int(last_token_indices[mini_idx])
+                last_decoder_embedding = decoder_last_hidden_state[mini_idx, seq_length, :].cpu()
+                embeddings[running_idx]['decoder_embedding'] = last_decoder_embedding
+                running_idx += 1
+
+    return embeddings
+
+
+def Qwen2_embeddings(descriptions,
+        batch_size = 1,
+        device = torch.device('cpu'),
+        context = CONTEXT,
+        pretrained_model = QWEN2_NAME):
+
+    embeddings, texts = {}, []
+    for des_idx in range(len(descriptions)):
+        description = descriptions[des_idx]
+        text = context.format(use_a_or_an(description), description)
+        texts.append(text)
+        embeddings[des_idx] = {'description': description,
+                               'text': text}
+
+    tokenizer = Qwen2Tokenizer.from_pretrained(pretrained_model)
+    model = Qwen2Model.from_pretrained(pretrained_model)
+
+    dataset = TextDataset(texts, tokenizer)
+    dataloader = DataLoader(dataset, batch_size = batch_size, shuffle = False)
+
+    running_idx = 0
+    for batch_data in dataloader:
+        input_ids = batch_data['input_ids'].squeeze(1).to(device)
+        attention_mask = batch_data['attention_mask'].squeeze(1).to(device)
+
+        with torch.no_grad():
+            outputs = model(input_ids = input_ids,
+                            attention_mask = attention_mask)
+
+            last_token_indices = attention_mask.sum(dim = 1) - 1
+            decoder_last_hidden_state = outputs.last_hidden_state
+            for mini_idx in range(last_token_indices.shape[0]):
+                seq_length = int(last_token_indices[mini_idx])
+                last_decoder_embedding = decoder_last_hidden_state[mini_idx, seq_length, :].cpu()
                 embeddings[running_idx]['decoder_embedding'] = last_decoder_embedding
                 running_idx += 1
 

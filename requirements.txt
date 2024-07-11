@@ -3,7 +3,8 @@ matplotlib
 scikit-learn
 torch
 pandas
-transformers
+transformers>=4.42.0
+tensorboard
 datasets
 sentencepiece
 protobuf

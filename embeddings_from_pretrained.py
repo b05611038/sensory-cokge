@@ -13,8 +13,14 @@ from src.models import (ALBERT_embeddings,
                         BERT_NAME,
                         BART_embeddings,
                         BART_NAME,
+                        Gemma2_embeddings,
+                        GEMMA2_NAME,
                         GPT2_embeddings,
                         GPT2_NAME,
+                        Llama3_embeddings,
+                        LLAMA3_NAME,
+                        Qwen2_embeddings,
+                        QWEN2_NAME,
                         RoBERTa_embeddings,
                         RoBERTa_NAME,
                         T5_embeddings,
@@ -32,16 +38,26 @@ def main():
             help = 'The model config of evaluated pretrained BERT.')
     parser.add_argument('--BART_select', type = str, default = BART_NAME,
             help = 'The model config of evaluated pretrained BART.')
+    parser.add_argument('--Gemma2_select', type = str, default = GEMMA2_NAME,
+            help = 'The model config of evaluated pretrained Gemma2.')
     parser.add_argument('--GPT2_select', type = str, default = GPT2_NAME,
             help = 'The model config of evaluated pretrained GPT2.')
+    parser.add_argument('--Llama3_select', type = str, default = LLAMA3_NAME,
+            help = 'The model config of evaluated pretrained Llama3.')
+    parser.add_argument('--Qwen2_select', type = str, default = QWEN2_NAME,
+            help = 'The model config of evaluated pretrained Qwen2.')
     parser.add_argument('--RoBERTa_select', type = str, default = RoBERTa_NAME,
             help = 'The model config of evaluated pretrained RoBERTa.')
     parser.add_argument('--T5_select',  type = str, default = T5_NAME,
             help = 'The model config of evaluated pretrained T5.')
     parser.add_argument('--batch_size', type = int, default = 4,
             help = 'The mini-batch size you want to use when inference.')
+    parser.add_argument('--batch_size_LLM', type = int, default = 1,
+            help = 'The mini-batch size for gigantic LM you want to use when inference.')
     parser.add_argument('--device', type = str, default = 'auto',
             help = 'Select the computing device.')
+    parser.add_argument('--enable_LLM', action = 'store_true',
+            help = 'To determine calculte gigantic LM results.')
 
     args = parser.parse_args()
     if args.device == 'auto':
@@ -105,6 +121,31 @@ def main():
                                   pretrained_model = args.T5_select)
 
     save_object(os.path.join(args.folder_name, 'pretrained-T5_embeddings.pkl'), t5_embeddings)
+
+    if args.enable_LLM:
+        print('Process Gemma2 embeddings ...')
+        gemma2_embeddings = Gemma2_embeddings(descriptions,
+                                              device = device,
+                                              batch_size = args.batch_size_LLM,
+                                              pretrained_model = args.Gemma2_select)
+
+        save_object(os.path.join(args.folder_name, 'pretrained-Gemma2_embeddings.pkl'), gemma2_embeddings)
+
+        print('Process Llama3 embeddings ...')
+        llama3_embeddings = Llama3_embeddings(descriptions,
+                                              device = device,
+                                              batch_size = args.batch_size_LLM,
+                                              pretrained_model = args.Llama3_select)
+
+        save_object(os.path.join(args.folder_name, 'pretrained-Llama3_embeddings.pkl'), llama3_embeddings)
+
+        print('Process Qwen2 embeddings ...')
+        qwen2_embeddings = Qwen2_embeddings(descriptions,
+                                            device = device,
+                                            batch_size = args.batch_size_LLM,
+                                            pretrained_model = args.Qwen2_select)
+
+        save_object(os.path.join(args.folder_name, 'pretrained-Qwen2_embeddings.pkl'), qwen2_embeddings)
 
     print('All propeties extracted from graph and LLMs done.')
 
