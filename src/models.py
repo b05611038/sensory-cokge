@@ -13,7 +13,6 @@ from transformers import (AlbertTokenizer,
                           Gemma2Model,
                           GPT2Tokenizer, 
                           GPT2Model,
-                          LlamaTokenizer,
                           LlamaModel,
                           Qwen2Model,
                           Qwen2Tokenizer,
@@ -46,12 +45,13 @@ TOKEN_ARGS = {
 ALBERT_NAME = 'albert-base-v2'
 BERT_NAME = 'bert-base-uncased'
 BART_NAME = 'facebook/bart-base'
-GEMMA2_NAME = './gemma-2-9b'
+GEMMA2_NAME = '/shared_data/gemma-2-9b'
 GPT2_NAME = 'gpt2'
-LLAMA3_NAME = 'meta-llama/Meta-Llama-3-8B'
-QWEN2_NAME = ''
+LLAMA3_NAME = '/shared_data/Meta-Llama-3-8B'
+QWEN2_NAME = '/shared_data/Qwen2-7B'
 RoBERTa_NAME = 'roberta-base'
 T5_NAME = 't5-base'
+
 
 class TextDataset(Dataset):
     def __init__(self, texts, tokenizer, 
@@ -118,6 +118,7 @@ def ALBERT_embeddings(descriptions,
 
     return embeddings
 
+
 def BERT_embeddings(descriptions, 
         batch_size = 4, 
         device = torch.device('cpu'),
@@ -167,6 +168,7 @@ def BERT_embeddings(descriptions,
 
     return embeddings
 
+
 def BART_embeddings(descriptions,
         batch_size = 4,
         device = torch.device('cpu'),
@@ -191,6 +193,8 @@ def BART_embeddings(descriptions,
 
         tokenizer = BartTokenizer.from_pretrained(finetuned_model)
         model = BartModel.from_pretrained(finetuned_model)
+
+    model = model.to(device)
 
     dataset = TextDataset(texts, tokenizer)
     dataloader = DataLoader(dataset, batch_size = batch_size, shuffle = False)
@@ -217,6 +221,7 @@ def BART_embeddings(descriptions,
 
     return embeddings
 
+
 def Gemma2_embeddings(descriptions,
         batch_size = 1,
         device = torch.device('cpu'),
@@ -233,6 +238,7 @@ def Gemma2_embeddings(descriptions,
 
     tokenizer = AutoTokenizer.from_pretrained(pretrained_model)
     model = Gemma2Model.from_pretrained(pretrained_model)
+    model = model.to(device)
 
     dataset = TextDataset(texts, tokenizer)
     dataloader = DataLoader(dataset, batch_size = batch_size, shuffle = False)
@@ -282,6 +288,8 @@ def GPT2_embeddings(descriptions,
         tokenizer = GPT2Tokenizer.from_pretrained(finetuned_model)
         model = GPT2Model.from_pretrained(finetuned_model)
 
+    model = model.to(device)
+
     dataset = TextDataset(texts, tokenizer)
     dataloader = DataLoader(dataset, batch_size = batch_size, shuffle = False)
     tokenizer.pad_token = tokenizer.eos_token
@@ -320,8 +328,13 @@ def Llama3_embeddings(descriptions,
         embeddings[des_idx] = {'description': description,
                                'text': text}
 
-    tokenizer = LlamaTokenizer.from_pretrained(pretrained_model)
+    tokenizer = AutoTokenizer.from_pretrained(pretrained_model,
+                                              legacy = False)
+
+    tokenizer.add_special_tokens({'pad_token': '<|end_of_text|>'})
+
     model = LlamaModel.from_pretrained(pretrained_model)
+    model = model.to(device)
 
     dataset = TextDataset(texts, tokenizer)
     dataloader = DataLoader(dataset, batch_size = batch_size, shuffle = False)
@@ -362,6 +375,7 @@ def Qwen2_embeddings(descriptions,
 
     tokenizer = Qwen2Tokenizer.from_pretrained(pretrained_model)
     model = Qwen2Model.from_pretrained(pretrained_model)
+    model = model.to(device)
 
     dataset = TextDataset(texts, tokenizer)
     dataloader = DataLoader(dataset, batch_size = batch_size, shuffle = False)
@@ -384,6 +398,7 @@ def Qwen2_embeddings(descriptions,
                 running_idx += 1
 
     return embeddings
+
 
 def RoBERTa_embeddings(descriptions,
         batch_size = 4,
@@ -435,6 +450,7 @@ def RoBERTa_embeddings(descriptions,
 
     return embeddings
 
+
 def T5_embeddings(descriptions,
         batch_size = 4,
         device = torch.device('cpu'),
@@ -459,6 +475,8 @@ def T5_embeddings(descriptions,
 
         tokenizer = T5Tokenizer.from_pretrained(finetuned_model, legacy = False)
         model = T5Model.from_pretrained(finetuned_model)
+
+    model = model.to(device)
 
     dataset = TextDataset(texts, tokenizer)
     dataloader = DataLoader(dataset, batch_size = batch_size, shuffle = False)

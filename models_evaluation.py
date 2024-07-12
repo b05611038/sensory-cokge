@@ -29,6 +29,9 @@ def main():
                          'BART': 'pretrained-BART_embeddings.pkl',
                          'BERT': 'pretrained-BERT_embeddings.pkl',
                          'GPT2': 'pretrained-GPT2_embeddings.pkl',
+                         'Gemma2': 'pretrained-Gemma2_embeddings.pkl',
+                         'Llama3': 'pretrained-Llama3_embeddings.pkl',
+                         'Qwen2': 'pretrained-Qwen2_embeddings.pkl',
                          'RoBERTa': 'pretrained-RoBERTa_embeddings.pkl',
                          'T5': 'pretrained-T5_embeddings.pkl'}
 
@@ -58,6 +61,7 @@ def main():
         if args.condition == 'pretrained':
             print('Please run embeddings_from_pretrained.py first.')
             sys.exit(0)
+
         elif args.condition == 'finetuned':
             print('Please run embeddings_from_pretrained.py first.')
             print('Afterwards, run generate_finetuned_data.py first to generate training data.')
@@ -78,9 +82,21 @@ def main():
     if bart_embeddings is not None:
         bart_embeddings = load_pickle_obj(os.path.join(args.folder_name, bart_embeddings))
 
+    gemma2_embeddings = checked_files.get('Gemma2', None)
+    if gemma2_embeddings is not None:
+        gemma2_embeddings = load_pickle_obj(os.path.join(args.folder_name, gemma2_embeddings))
+
     gpt2_embeddings = checked_files.get('GPT2', None)
     if gpt2_embeddings is not None:
         gpt2_embeddings = load_pickle_obj(os.path.join(args.folder_name, gpt2_embeddings))
+
+    llama3_embeddings = checked_files.get('Llama3', None)
+    if llama3_embeddings is not None:
+        llama3_embeddings = load_pickle_obj(os.path.join(args.folder_name, llama3_embeddings))
+
+    qwen2_embeddings = checked_files.get('Qwen2', None)
+    if qwen2_embeddings is not None:
+        qwen2_embeddings = load_pickle_obj(os.path.join(args.folder_name, qwen2_embeddings))
 
     roberta_embeddings = checked_files.get('RoBERTa', None)
     if roberta_embeddings is not None:
@@ -114,11 +130,29 @@ def main():
         metrics.summary()
         result_dict['BERT'] = {'encoder': metrics.metrics}
 
+    if gemma2_embeddings is not None:
+        print('Start evluate Gemma2 model ...')
+        metrics = EvaluationMetrics('Gemma2', 'decoder', gemma2_embeddings, graph_properties)
+        metrics.summary()
+        result_dict['Gemma2'] = {'decoder': metrics.metrics}
+
     if gpt2_embeddings is not None:
         print('Start evalutate GPT-2 model ...')
         metrics = EvaluationMetrics('GPT2', 'decoder', gpt2_embeddings, graph_properties)
         metrics.summary()
         result_dict['GPT2'] = {'decoder': metrics.metrics}
+
+    if llama3_embeddings is not None:
+        print('Start evaluate LLAMA3 model ...')
+        metrics = EvaluationMetrics('Llama3', 'decoder', llama3_embeddings, graph_properties)
+        metrics.summary()
+        result_dict['Llama3'] = {'decoder': metrics.metrics}
+
+    if qwen2_embeddings is not None:
+        print('Start evaluate Qwen2 model ...')
+        metrics = EvaluationMetrics('Qwen2', 'decoder', qwen2_embeddings, graph_properties)
+        metrics.summary()
+        result_dict['Qwen2'] = {'decoder': metrics.metrics}
 
     if roberta_embeddings is not None:
         print('Start evalutate RoBERTa model ...')
