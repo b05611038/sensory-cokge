@@ -173,7 +173,7 @@ def main():
 
     item_names = ['adjacency_matching_l2', 'adjacency_matching_l2_NoRB', 'adjacency_matching_angle',
             'adjacency_matching_angle_NoRB', 'distances_matching_l2', 'distances_matching_l2_NoRB',
-            'distances_matching_angle', 'distances_matching_angle']
+            'distances_matching_angle', 'distances_matching_angle_NoRB']
     if len(args.layout_file):
         lines = []
         head_line = 'LM,structure,'
