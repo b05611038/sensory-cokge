@@ -1,10 +1,11 @@
 numpy
+igraph
 matplotlib
 scikit-learn
 torch
 pandas
 transformers>=4.42.0
-tensorboard
+transformers[tensorboard]
 datasets
 sentencepiece
 protobuf
