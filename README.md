@@ -3,7 +3,6 @@ The research code of using LLMs to quantify text info in sensory evaluation
 
 ## Get start
 
-Please download private library: [coffee_database] (http://gofile.me/3Rex9/rZ8SoE5iz) first.  
 Please see the README.md in the folder and use pip to install it first.
 After installation, use following command to install necessary modules.  
 
