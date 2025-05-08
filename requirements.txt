@@ -9,3 +9,5 @@ transformers[tensorboard]
 datasets
 sentencepiece
 protobuf
+opentsne
+adjustText
