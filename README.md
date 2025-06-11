@@ -1,6 +1,10 @@
 # language_models_embedding
-The research code of using LLMs to quantify text info in sensory evaluation
-Paper under review.
+
+This repository supports the paper "Sensory-CoKGE: A Contextualized Knowledge  
+Graph Embedding Framework Using Language Models for Converting Text-Based   
+Food Attributes into Numerical Representation", currently under review at  
+*Expert Systems with Applications*.
+
 
 ## Get start
 
