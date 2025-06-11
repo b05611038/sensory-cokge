@@ -1,4 +1,4 @@
-# language_models_embedding
+# sensory-cokge
 
 This repository supports the paper "Sensory-CoKGE: A Contextualized Knowledge  
 Graph Embedding Framework Using Language Models for Converting Text-Based   
