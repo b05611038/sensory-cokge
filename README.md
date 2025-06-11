@@ -5,6 +5,8 @@ Graph Embedding Framework Using Language Models for Converting Text-Based
 Food Attributes into Numerical Representation", currently under review at  
 *Expert Systems with Applications*.
 
+This approach integrates a knowledge graph with LMs to convert text-based food attributes  
+into numerical data suitable for subsequent analysis.
 
 ## Get start
 
