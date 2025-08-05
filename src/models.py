@@ -21,6 +21,8 @@ from transformers import (AlbertTokenizer,
                           T5Tokenizer,
                           T5Model)
 
+from laser_encoders import LaserEncoderPipeline
+
 from .utils import use_a_or_an
 
 __all__ = ['ALBERT_NAME', 'ALBERT_embeddings',
@@ -31,7 +33,8 @@ __all__ = ['ALBERT_NAME', 'ALBERT_embeddings',
            'LLAMA3_NAME', 'Llama3_embeddings',
            'QWEN2_NAME', 'Qwen2_embeddings',
            'RoBERTa_NAME', 'RoBERTa_embeddings',
-           'T5_NAME', 'T5_embeddings']
+           'T5_NAME', 'T5_embeddings',
+           'Laser_embeddings']
 
 
 CONTEXT = 'This cup of coffee has {0} {1} flavor.'
@@ -310,6 +313,32 @@ def GPT2_embeddings(descriptions,
                 last_decoder_embedding = last_hidden_state[mini_idx, seq_length, :].cpu()
                 embeddings[running_idx]['decoder_embedding'] = last_decoder_embedding
                 running_idx += 1
+
+    return embeddings
+
+def Laser_embeddings(descriptions,
+        batch_size = 1,
+        device = torch.device('cpu'),
+        context = CONTEXT,
+        pretrained_model = None):
+
+    # for demo, not support GPU
+
+    assert batch_size == 1
+
+    embeddings, texts = {}, []
+    for des_idx in range(len(descriptions)):
+        description = descriptions[des_idx]
+        text = context.format(use_a_or_an(description), description)
+        texts.append(text)
+        embeddings[des_idx] = {'description': description,
+                               'text': text}
+
+    enc = LaserEncoderPipeline(lang="eng")
+
+    for des_idx in embeddings:
+        output = enc.encode_sentences([embeddings[des_idx]['text']])
+        embeddings[des_idx]['encoder_embedding'] = output[0]
 
     return embeddings
 
