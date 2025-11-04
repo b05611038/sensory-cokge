@@ -1,12 +1,33 @@
 # sensory-cokge
 
-This repository supports the paper "Sensory-CoKGE: A Contextualized Knowledge  
-Graph Embedding Framework Using Language Models for Converting Text-Based   
-Food Attributes into Numerical Representation", currently under review at  
-*Expert Systems with Applications*.
+This repository supports the published paper "Sensory-CoKGE: A Contextualized Knowledge Graph Embedding Framework Using Language Models for Converting Text-Based Food Attributes into Numerical Representation", now published in *Expert Systems with Applications*.  
 
-This approach integrates a knowledge graph with LMs to convert text-based food attributes  
-into numerical data suitable for subsequent analysis.
+The Sensory-CoKGE framework integrates knowledge graphs with language models to transform text-based food attributes into meaningful numerical representations, enabling more precise food similarity analysis and recommendations.  
+
+## Citation
+
+If you use this code in your research, please cite our paper.
+
+```bibtex
+@article{chang2026sensory-cokge,
+  title = {Sensory-CoKGE: A contextualized knowledge graph embedding framework using language models for converting text-based food attributes into numerical representation},
+  journal = {Expert Systems with Applications},
+  volume = {299},
+  number = {Part C},
+  year = {2026},
+  issn = {0957-4174},
+  doi = {10.1016/j.eswa.2025.130191},
+  url = {https://doi.org/10.1016/j.eswa.2025.130191},
+  author = {Yu-Tang Chang and Shih-Fang Chen},
+}
+```
+
+## Repository Contents
+
+The source code implements the Sensory-CoKGE framework, including:
+- Core modules for language model fine-tuning and sensory-DAG
+- Descriptor embedding generation
+- Framework evaluation tools
 
 ## Get start
 
@@ -64,9 +85,7 @@ python3 embeddings_from_finetuned.py
 python3 models_evaluation.py finetuned 
 ```
 
-## Needed developed models
-
-### Large models (6-8B, latest)
+### Large models (6-8B, only eval. no fine-tuning)
 
 - LLAMA3
 - Gemma2
