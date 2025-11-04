@@ -11,3 +11,5 @@ sentencepiece
 protobuf
 opentsne
 adjustText
+laser_encoders
+tensorboardX
