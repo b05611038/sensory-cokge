@@ -19,7 +19,7 @@ def test_food_name_detection():
         'floral': ['rose', 'violet'],
         'spicy': ['pepper', 'cinnamon']
     }
-    wine_graph = build_graph_from_hierarchy(wine_hierarchy, root='wine_root',
+    wine_graph = build_graph_from_hierarchy(wine_hierarchy,
                                             graph_name='wine_flavor_wheel')
 
     wine_data = generate_synthetic_data(
@@ -50,7 +50,7 @@ def test_food_name_detection():
         'savory': ['umami', 'salty'],
         'pungent': ['funky', 'sharp']
     }
-    cheese_graph = build_graph_from_hierarchy(cheese_hierarchy, root='cheese_root',
+    cheese_graph = build_graph_from_hierarchy(cheese_hierarchy,
                                               graph_name='cheese_attributes')
 
     cheese_data = generate_synthetic_data(
@@ -97,7 +97,7 @@ def test_food_name_detection():
 
     for graph_name_test, expected_food in test_cases:
         hierarchy = {'fruity': ['apple'], 'spicy': ['pepper']}
-        test_graph = build_graph_from_hierarchy(hierarchy, root='root',
+        test_graph = build_graph_from_hierarchy(hierarchy,
                                                 graph_name=graph_name_test)
         test_data = generate_synthetic_data(
             train_samples=5,

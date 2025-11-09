@@ -75,7 +75,7 @@ wine_attributes = {
 }
 
 # 2. Build the attribute graph
-graph = build_graph_from_hierarchy(wine_attributes, root='wine')
+graph = build_graph_from_hierarchy(wine_attributes, graph_name='wine_aromas')
 
 # 3. Validate your graph structure
 validation = validate_graph_structure(graph)
@@ -122,7 +122,7 @@ cheese_flavors = {
     'pungent': ['funky', 'ammonia']
 }
 
-graph = build_graph_from_hierarchy(cheese_flavors, root='cheese')
+graph = build_graph_from_hierarchy(cheese_flavors, graph_name='cheese_flavors')
 ```
 
 ### Build Graphs from CSV Files
@@ -139,7 +139,7 @@ from sensory_cokge import build_graph_from_csv
 graph = build_graph_from_csv('my_attributes.csv',
                               child_column='attribute',
                               parent_column='category',
-                              root='root')
+                              graph_name='custom_attributes')
 ```
 
 ### Create Context Templates
@@ -255,7 +255,7 @@ wine_attributes = {
     'floral': ['rose', 'violet', 'jasmine'],
     'spicy': ['pepper', 'cinnamon', 'clove']
 }
-graph = build_graph_from_hierarchy(wine_attributes, root='wine')
+graph = build_graph_from_hierarchy(wine_attributes, graph_name='wine_aromas')
 context = create_context_template('wine', 'has', '{0} {1} aroma')
 ```
 
@@ -270,7 +270,7 @@ chocolate_profile = {
     },
     'nutty': ['almond', 'hazelnut']
 }
-graph = build_graph_from_hierarchy(chocolate_profile, root='chocolate')
+graph = build_graph_from_hierarchy(chocolate_profile, graph_name='chocolate_profile')
 context = create_context_template('chocolate', 'has', '{0} {1} taste')
 ```
 
@@ -285,7 +285,7 @@ context = create_context_template('chocolate', 'has', '{0} {1} taste')
 # nutty,root
 # chocolate,root
 
-graph = build_graph_from_csv('coffee_attributes.csv', root='root')
+graph = build_graph_from_csv('coffee_attributes.csv', graph_name='coffee_attributes')
 context = create_context_template('coffee', 'has', '{0} {1} flavor')
 ```
 
@@ -311,7 +311,7 @@ wine_attributes = {
     'floral': ['rose', 'violet', 'jasmine'],
     'spicy': ['pepper', 'cinnamon', 'clove']
 }
-wine_graph = build_graph_from_hierarchy(wine_attributes, root='wine')
+wine_graph = build_graph_from_hierarchy(wine_attributes, graph_name='wine_aromas')
 
 # 2. Generate embeddings
 context = create_context_template('wine', 'has', '{0} {1} aroma')
@@ -350,7 +350,7 @@ cheese_flavors = {
     'savory': ['umami', 'salty'],
     'pungent': ['funky', 'ammonia']
 }
-cheese_graph = build_graph_from_hierarchy(cheese_flavors, root='cheese',
+cheese_graph = build_graph_from_hierarchy(cheese_flavors,
                                           graph_name='cheese_flavor_attributes')
 
 # 2. Generate synthetic training data (food_name auto-detected from graph_name!)
@@ -367,7 +367,7 @@ print(f"Generated {len(data['eval'])} evaluation samples")
 print(f"Files saved to ./cheese_training/")
 
 # 3. Optional: Override auto-detected food name for more specific naming
-wine_graph = build_graph_from_hierarchy(wine_attrs, root='wine',
+wine_graph = build_graph_from_hierarchy(wine_attrs,
                                          graph_name='wine_aromas')
 wine_data = generate_synthetic_data(
     train_samples=5000,

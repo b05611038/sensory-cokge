@@ -457,8 +457,7 @@ def generate_synthetic_data(
     ...     'floral': ['rose', 'violet'],
     ...     'spicy': ['pepper', 'cinnamon']
     ... }
-    >>> wine_graph = build_graph_from_hierarchy(wine_hierarchy, root='wine',
-    ...                                          graph_name='wine_flavor_wheel')
+    >>> wine_graph = build_graph_from_hierarchy(wine_hierarchy, graph_name='wine_flavor_wheel')
     >>> wine_data = generate_synthetic_data(
     ...     train_samples=5000,
     ...     eval_samples=500,
@@ -467,7 +466,7 @@ def generate_synthetic_data(
     ... )
 
     >>> # Example 3: Custom graph with explicit food name
-    >>> cheese_graph = build_graph_from_hierarchy(cheese_hierarchy, root='cheese')
+    >>> cheese_graph = build_graph_from_hierarchy(cheese_hierarchy, graph_name='cheese_flavors')
     >>> cheese_data = generate_synthetic_data(
     ...     train_samples=2000,
     ...     eval_samples=200,
@@ -709,7 +708,6 @@ def create_description_graph(
 
 def build_graph_from_hierarchy(
         hierarchy,
-        root='root',
         graph_name='custom_food_graph',
         connection_distances=None):
     """
@@ -719,13 +717,16 @@ def build_graph_from_hierarchy(
     product. Simply provide a nested dictionary where keys are parent categories
     and values are either lists (leaf nodes) or dicts (sub-categories).
 
+    The root node is automatically extracted from graph_name (e.g., 'wine_aromas' → root='wine').
+    This prevents users from accidentally affecting graph computations by manually setting root.
+
     HOW TO DEFINE A VALID GRAPH (DAG - Directed Acyclic Graph)
     ===========================================================
 
     Rules for creating a valid sensory description graph:
 
     1. **Hierarchical Structure**: The graph must be tree-like with a single root
-       - Start with one root node (e.g., 'root', 'wine', 'cheese')
+       - Root is automatically determined from graph_name
        - Branch out to main categories
        - Continue to sub-categories and specific attributes
 
@@ -748,10 +749,10 @@ def build_graph_from_hierarchy(
     hierarchy : dict
         Nested dictionary defining the attribute hierarchy.
         Format: {category: [attributes]} or {category: {subcategory: [...]}}
-    root : str, optional
-        Name of the root node. Default: 'root'
     graph_name : str, optional
-        Descriptive name for your graph. Default: 'custom_food_graph'
+        Descriptive name for your graph. The root node will be extracted from this.
+        Examples: 'wine_aromas' → root='wine', 'cheese_flavors' → root='cheese'
+        Default: 'custom_food_graph' → root='custom'
     connection_distances : dict, optional
         Custom distance weights for connection types.
         Default: Uses standard distances (root-branch=10, sub-category=1, synonym=0)
@@ -771,8 +772,7 @@ def build_graph_from_hierarchy(
     ...     'spicy': ['pepper', 'cinnamon', 'clove'],
     ...     'earthy': ['mushroom', 'soil', 'forest']
     ... }
-    >>> graph = build_graph_from_hierarchy(wine_hierarchy, root='wine',
-    ...                                     graph_name='wine_aromas')
+    >>> graph = build_graph_from_hierarchy(wine_hierarchy, graph_name='wine_aromas')
 
     **Example 2: Nested cheese flavor graph**
 
@@ -787,8 +787,7 @@ def build_graph_from_hierarchy(
     ...         'fermented': ['funky', 'ammonia']
     ...     }
     ... }
-    >>> graph = build_graph_from_hierarchy(cheese_hierarchy, root='cheese',
-    ...                                     graph_name='cheese_flavors')
+    >>> graph = build_graph_from_hierarchy(cheese_hierarchy, graph_name='cheese_flavors')
 
     **Example 3: Chocolate taste profile**
 
@@ -802,13 +801,28 @@ def build_graph_from_hierarchy(
     ...     'nutty': ['almond', 'hazelnut'],
     ...     'spicy': ['cinnamon', 'chili']
     ... }
-    >>> graph = build_graph_from_hierarchy(chocolate_hierarchy, root='chocolate')
+    >>> graph = build_graph_from_hierarchy(chocolate_hierarchy, graph_name='chocolate_profile')
     >>> # Now you can use it!
     >>> from sensory_cokge import compute_embeddings, evaluate_embeddings
     >>> descriptions = ['raspberry', 'cherry', 'almond', 'honey']
     >>> embeddings = compute_embeddings(descriptions, model_name='BERT',
     ...                                  context='This chocolate has {0} {1} note.')
     """
+    import re
+
+    # Extract root from graph_name (same logic as food_name extraction)
+    def _extract_root_from_graph_name(graph_name_str):
+        if not graph_name_str:
+            return 'root'
+        # Remove parentheses and their contents
+        cleaned = re.sub(r'\([^)]*\)', '', graph_name_str)
+        # Get first word before underscore, dash, or space
+        match = re.match(r'^([a-zA-Z]+)', cleaned)
+        if match:
+            return match.group(1).lower()
+        return 'root'
+
+    root = _extract_root_from_graph_name(graph_name)
     # Collect all descriptions and parent relationships
     all_descriptions = [root]
     parents_of_descriptions = {}
@@ -875,7 +889,6 @@ def build_graph_from_csv(
         filepath,
         child_column='attribute',
         parent_column='category',
-        root='root',
         graph_name='custom_graph'):
     """
     Build a description graph from a CSV file defining parent-child relationships.
@@ -884,10 +897,13 @@ def build_graph_from_csv(
     in a spreadsheet. Simply export to CSV with columns for attributes and
     their parent categories.
 
+    The root node is automatically extracted from graph_name (e.g., 'beer_flavors' → root='beer').
+    This prevents users from accidentally affecting graph computations by manually setting root.
+
     CSV Format Requirements
     =======================
     - Must have at least 2 columns: one for attributes, one for parents
-    - Parent of root should be empty/blank or equal to root itself
+    - Parent of root should be empty/blank (will be treated as root automatically)
     - Each row defines one attribute and its parent category
 
     Parameters
@@ -898,10 +914,10 @@ def build_graph_from_csv(
         Name of column containing attribute names. Default: 'attribute'
     parent_column : str, optional
         Name of column containing parent categories. Default: 'category'
-    root : str, optional
-        Name of the root node. Default: 'root'
     graph_name : str, optional
-        Descriptive name for the graph. Default: 'custom_graph'
+        Descriptive name for the graph. The root node will be extracted from this.
+        Examples: 'beer_flavors' → root='beer', 'wine_aromas' → root='wine'
+        Default: 'custom_graph' → root='custom'
 
     Returns
     -------
@@ -913,9 +929,9 @@ def build_graph_from_csv(
     **CSV file format (beer_flavors.csv):**
     ```
     attribute,category
-    malty,root
-    hoppy,root
-    fruity,root
+    malty,
+    hoppy,
+    fruity,
     caramel,malty
     toasted,malty
     citrus,hoppy
@@ -927,10 +943,25 @@ def build_graph_from_csv(
     >>> graph = build_graph_from_csv('beer_flavors.csv',
     ...                               child_column='attribute',
     ...                               parent_column='category',
-    ...                               root='root',
     ...                               graph_name='beer_flavors')
     >>> print(f"Graph has {len(graph.descriptions)} attributes")
     """
+    import re
+
+    # Extract root from graph_name
+    def _extract_root_from_graph_name(graph_name_str):
+        if not graph_name_str:
+            return 'root'
+        # Remove parentheses and their contents
+        cleaned = re.sub(r'\([^)]*\)', '', graph_name_str)
+        # Get first word before underscore, dash, or space
+        match = re.match(r'^([a-zA-Z]+)', cleaned)
+        if match:
+            return match.group(1).lower()
+        return 'root'
+
+    root = _extract_root_from_graph_name(graph_name)
+
     # Read CSV
     df = pd.read_csv(filepath)
 
@@ -1099,7 +1130,7 @@ def validate_graph_structure(graph):
     ...     'fruity': ['apple', 'pear'],
     ...     'spicy': ['pepper', 'cinnamon']
     ... }
-    >>> graph = build_graph_from_hierarchy(hierarchy, root='food')
+    >>> graph = build_graph_from_hierarchy(hierarchy, graph_name='food_attributes')
     >>> results = validate_graph_structure(graph)
     >>> if results['is_valid']:
     ...     print("Graph is valid!")
@@ -1199,7 +1230,6 @@ from sensory_cokge import build_graph_from_hierarchy, validate_graph_structure
 
 graph = build_graph_from_hierarchy(
     chocolate_attributes,
-    root='chocolate',
     graph_name='chocolate_taste_wheel'
 )
 
