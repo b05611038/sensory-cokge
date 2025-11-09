@@ -11,6 +11,7 @@ This package provides tools to:
 import os
 import pandas as pd
 import torch
+import numpy as np
 
 # Core modules
 from .graph import (
@@ -311,10 +312,69 @@ def evaluate_embeddings(embeddings, graph=None, embedding_type='encoder_embeddin
     >>> results = evaluate_embeddings(embeddings)
     >>> print(f"L2 matching: {results['distances_matching_l2']:.4f}")
     """
+    import copy
+
     if graph is None:
+        # Use default coffee flavor wheel
         graph_props = graph_properties()
     else:
-        graph_props = graph_properties()  # Can be customized with graph parameters
+        # Extract properties from the custom graph
+        # This follows the same logic as graph_properties() in graph.py
+        graph_props = {}
+
+        # Get weighted adjacency matrix (with reverse connections)
+        root_description = False
+        reverse_connection = True
+        (weighted_adjacency,
+         descriptions) = graph.weighted_adjacency_matrix(root_description=root_description,
+                                                         reverse_connection=reverse_connection)
+
+        graph_props['descriptions'] = descriptions
+
+        # Normalize adjacency matrix
+        normalized_adjacency = normalize_weighted_adjacency(weighted_adjacency)
+        graph_props['normalized_adjacency'] = normalized_adjacency
+
+        # Create version without root-branch connections
+        threshold_distances = (CONNENTION_DISTANCES['forward']['root-branch'] +
+                              CONNENTION_DISTANCES['forward']['root-branch']) / 2.
+        weighted_adjacency_NoRB = weighted_adjacency * (weighted_adjacency < threshold_distances)
+        normalized_adjacency_NoRB = normalize_weighted_adjacency(weighted_adjacency_NoRB)
+        graph_props['normalized_adjacency_NoRB'] = normalized_adjacency_NoRB
+
+        # Compute distance matrix between all descriptions
+        distance_matrix = np.zeros((len(descriptions), len(descriptions)), dtype=np.float32)
+        for row_idx in range(len(descriptions)):
+            for col_idx in range(len(descriptions)):
+                if row_idx != col_idx:
+                    row_description = descriptions[row_idx]
+                    col_description = descriptions[col_idx]
+                    distance_matrix[row_idx, col_idx] = graph.distance_between_descriptions(
+                        row_description,
+                        col_description,
+                        weighted=True
+                    )
+
+        # Normalize distances
+        max_distance = np.max(distance_matrix)
+        if max_distance > 0.:
+            normalized_distances = distance_matrix / max_distance
+        else:
+            normalized_distances = copy.deepcopy(distance_matrix)
+
+        graph_props['normalized_distances'] = normalized_distances
+
+        # Create version without root-branch connections
+        threshold_distances = (CONNENTION_DISTANCES['forward']['root-branch'] +
+                              CONNENTION_DISTANCES['forward']['root-branch'])
+        distance_matrix_NoRB = distance_matrix * (distance_matrix < threshold_distances)
+        max_distance = np.max(distance_matrix_NoRB)
+        if max_distance > 0.:
+            normalized_distances_NoRB = distance_matrix_NoRB / max_distance
+        else:
+            normalized_distances_NoRB = copy.deepcopy(distance_matrix_NoRB)
+
+        graph_props['normalized_distances_NoRB'] = normalized_distances_NoRB
 
     # Determine source structure from embedding type
     if 'decoder' in embedding_type:
