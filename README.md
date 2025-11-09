@@ -16,22 +16,23 @@ By using pretrained language models, the framework captures semantic meaning in 
 
 ## Key Features
 
+- **Easy-to-use API** for food researchers with minimal Python experience
 - Converts text-based food sensory attributes into numerical embeddings
-- Supports 6 fine-tunable models optimized for computers with limited resources
-- Optionally integrates large language models (8B) for advanced analysis
-- Produces embeddings ready for statistical analysis and visualization
-- Provides evaluation metrics for model comparison
-- Works with regular computers (CPU or modest GPU)
+- **Flexible graph creation** from simple dictionaries or CSV files
+- Supports multiple language models (BERT, RoBERTa, ALBERT, GPT-2, BART, T5)
+- Optional large language models (Gemma2, Llama3, Qwen2) for advanced analysis
+- **Customizable context templates** following pattern: "This [Food] [Verb] [Attribute]"
+- Built-in validation and evaluation metrics
+- Works with any food product (wine, cheese, coffee, chocolate, etc.)
 
 ## Prerequisites & Installation
 
 ### System Requirements
 
 - **Python:** 3.8 or higher
-- **Disk Space:** ~2GB for small models, ~10GB if including large models (8B)
-- **RAM:** 8GB minimum (16GB+ recommended)
-- **GPU:** Optional but improves performance (any modern GPU with 8GB+ VRAM)
-- **CPU-only mode:** Fully supported, just slower
+- **Hardware:** Modern computer with internet connection
+- **GPU:** Optional but recommended for faster processing
+- **CPU-only mode:** Fully supported
 
 ### Installation Steps
 
@@ -48,12 +49,132 @@ By using pretrained language models, the framework captures semantic meaning in 
 
 3. Verify installation:
    ```bash
-   python3 -c "import torch; print(f'PyTorch version: {torch.__version__}')"
+   python3 -c "import torch; import transformers; print('Installation successful!')"
    ```
 
-## Quick Start (10 minutes)
+## Quick Start for Food Researchers (5 minutes)
 
-Start with pretrained small models - no fine-tuning needed:
+The easiest way to get started is using the user-friendly API. Here's a complete example for analyzing wine attributes:
+
+```python
+from sensory_cokge import (
+    build_graph_from_hierarchy,
+    create_context_template,
+    compute_embeddings,
+    embeddings_to_csv,
+    validate_graph_structure
+)
+
+# 1. Define your food attributes as a simple dictionary
+wine_attributes = {
+    'fruity': ['apple', 'pear', 'citrus', 'berry'],
+    'floral': ['rose', 'violet', 'jasmine'],
+    'spicy': ['pepper', 'cinnamon', 'clove'],
+    'earthy': ['mushroom', 'soil', 'forest']
+}
+
+# 2. Build the attribute graph
+graph = build_graph_from_hierarchy(wine_attributes, root='wine')
+
+# 3. Validate your graph structure
+validation = validate_graph_structure(graph)
+print(validation['issues'])  # Check for any problems
+
+# 4. Create appropriate context for your food
+context = create_context_template('wine', 'has', '{0} {1} aroma')
+# Result: "This wine has {0} {1} aroma."
+
+# 5. Generate embeddings
+attributes = [d for d in graph.descriptions if d != 'wine']
+embeddings = compute_embeddings(
+    attributes,
+    model_name='BERT',
+    context=context,
+    device='auto'
+)
+
+# 6. Export to CSV for analysis
+embeddings_to_csv(embeddings, 'wine_embeddings.csv')
+print("Done! Check wine_embeddings.csv")
+```
+
+**For detailed examples with other foods (cheese, chocolate, coffee), see [GUIDE_FOR_FOOD_RESEARCHERS.ipynb](GUIDE_FOR_FOOD_RESEARCHERS.ipynb)**
+
+## User-Friendly Helper Functions
+
+### Build Graphs from Dictionaries
+
+```python
+from sensory_cokge import build_graph_from_hierarchy
+
+# Simple nested dictionary
+cheese_flavors = {
+    'dairy': {
+        'fresh': ['milk', 'cream', 'butter'],
+        'aged': ['sharp', 'tangy']
+    },
+    'savory': ['umami', 'salty'],
+    'pungent': ['funky', 'ammonia']
+}
+
+graph = build_graph_from_hierarchy(cheese_flavors, root='cheese')
+```
+
+### Build Graphs from CSV Files
+
+```python
+from sensory_cokge import build_graph_from_csv
+
+# CSV format:
+# attribute,category
+# fruity,root
+# apple,fruity
+# pear,fruity
+
+graph = build_graph_from_csv('my_attributes.csv',
+                              child_column='attribute',
+                              parent_column='category',
+                              root='root')
+```
+
+### Create Context Templates
+
+```python
+from sensory_cokge import create_context_template
+
+# Pattern: "This [Food] [Verb] [Attribute]."
+
+wine_context = create_context_template('wine', 'has', '{0} {1} aroma')
+# → "This wine has {0} {1} aroma."
+
+cheese_context = create_context_template('cheese', 'tastes', '{0} {1}')
+# → "This cheese tastes {0} {1}."
+
+coffee_context = create_context_template('coffee', 'smells', '{0} {1}')
+# → "This coffee smells {0} {1}."
+```
+
+### Validate Graph Structure
+
+```python
+from sensory_cokge import validate_graph_structure
+
+validation = validate_graph_structure(graph)
+
+if validation['is_valid']:
+    print("✓ Graph is valid!")
+else:
+    print("Issues:", validation['issues'])
+
+print(f"Attributes: {validation['statistics']['num_descriptions']}")
+print(f"Connections: {validation['statistics']['num_connections']}")
+```
+
+## Advanced Workflow: Using Scripts Directly
+
+For reproducibility and batch processing, you can use the provided scripts:
+
+### Workflow A: Pretrained Models (Recommended)
 
 ```bash
 # Step 1: Generate embeddings from pretrained models
@@ -63,340 +184,194 @@ python3 embeddings_from_pretrained.py
 python3 models_evaluation.py pretrained
 
 # Step 3 (Optional): Visualize embeddings
-# See Notebook_embedding_visualization.ipynb for interactive examples
-```
-
-This will:
-- Load the food sensory descriptor knowledge graph
-- Generate embeddings using pretrained BERT, RoBERTa, ALBERT, BART, GPT-2, and T5
-- Save embeddings in `./outputs/` for analysis
-- Print evaluation metrics comparing model performance
-
-**What are embeddings?**
-Embeddings are numerical vectors that capture the meaning of sensory descriptors. Similar descriptors (e.g., "smooth" and "creamy") will have similar embeddings, enabling statistical grouping and analysis.
-
-## Detailed Workflow
-
-### Workflow A: Using Pretrained Models (Recommended for Most Users)
-
-Best for food researchers who want immediate analysis without model training.
-
-**Step 1: Generate Pretrained Embeddings**
-
-```bash
-python3 embeddings_from_pretrained.py
-```
-
-- **What it does:** Loads descriptor graph and generates embeddings using pretrained language models
-- **Output:** Embeddings saved in `./outputs/pretrained-[MODEL]_embeddings.pkl`
-- **Runtime:** ~5-10 minutes (first run downloads models from internet)
-- **Result:** Ready-to-use embeddings for all 6 models
-
-**Step 2: Evaluate Model Performance**
-
-```bash
-python3 models_evaluation.py pretrained
-```
-
-- **What it does:** Computes metrics showing how well each model preserves sensory attribute relationships
-- **Output:** Metrics printed to console and optionally saved to CSV
-- **Metrics included:**
-  - Adjacency matching (structural preservation)
-  - Distance matching (relationship preservation)
-  - L2 and angular distance measures
-- **Runtime:** ~5-10 minutes
-
-**Step 3: Visualize Embeddings**
-
-```bash
 jupyter notebook Notebook_embedding_visualization.ipynb
 ```
 
-- Interactive visualization of embeddings using t-SNE and PCA
-- See how similar descriptors cluster together
-- Compare different models side-by-side
-
----
-
-### Workflow B: Fine-tuning Models on Your Own Data
-
-For researchers who want to specialize models on their own sensory descriptors.
-
-**When to use fine-tuning:**
-- You have domain-specific descriptors not well represented in general text
-- You want models optimized for your specific food category
-- You need better embeddings for your statistical analysis
-
-**Prerequisites:**
-- Complete Workflow A Step 1 first
-- Moderate computational resources (2-4 hours on GPU, or overnight on CPU)
-
-#### Step 1: Generate Fine-tuning Data
+### Workflow B: Fine-tuning Models
 
 ```bash
+# Step 1: Generate synthetic training data
 python3 generate_finetuned_data.py
-```
 
-- **What it does:** Creates synthetic training pairs from the descriptor graph
-- **Output:** Training files in `./outputs/`
-- **Runtime:** ~2-5 minutes
-- **Default:** 100,000 training samples, 10,000 evaluation samples
-- **Customization:** Use `--train_sample_number` and `--eval_sample_number` to adjust
+# Step 2: Fine-tune a model
+python3 finetune_BERT_by_sequence_classification.py <config_file>
 
-#### Step 2: Fine-tune a Model
+# Step 3: Generate embeddings from fine-tuned model
+python3 embeddings_from_finetuned.py <model_name>
 
-Choose one model to fine-tune:
-
-```bash
-# Small model - fastest (30 min on GPU, 4-6 hours on CPU)
-python3 finetune_BERT_by_sequence_classification.py
-
-# Alternative models:
-python3 finetune_RoBERTa_by_sequence_classification.py
-python3 finetune_ALBERT_by_sequence_classification.py
-python3 finetune_GPT2_by_sequence_classification.py
-python3 finetune_BART_by_sequence_classification.py
-python3 finetune_T5_by_sequence_classification.py
-```
-
-- **What it does:** Trains model on sensory descriptor pairs to improve embeddings
-- **Input:** Generated training data from Step 1
-- **Output:** Fine-tuned model saved to `./outputs/`
-- **Runtime:** 30 min - 4 hours depending on model and hardware
-- **Result:** Model specialized for your descriptors
-
-#### Step 3: Generate Fine-tuned Embeddings
-
-```bash
-python3 embeddings_from_finetuned.py
-```
-
-- **What it does:** Creates embeddings using your fine-tuned model
-- **Output:** Embeddings in `./outputs/`
-- **Runtime:** ~5-10 minutes
-
-#### Step 4: Compare Fine-tuned vs Pretrained
-
-```bash
+# Step 4: Evaluate fine-tuned model
 python3 models_evaluation.py finetuned
 ```
 
-- **What it does:** Evaluates your fine-tuned model and compares with pretrained baseline
-- **Output:** Metrics showing improvement from fine-tuning
-- **Runtime:** ~5-10 minutes
-
----
-
 ## Available Models
 
-### Small Models (Fine-tunable) - Recommended for Most Users
+### Small Models (Fine-tunable)
 
-These models can be both evaluated and fine-tuned. They work well on regular computers.
+These models can be evaluated and fine-tuned on standard computers.
 
-| Model | Model Size | Speed | VRAM | Fine-tuning Time (GPU) | Best For |
-|-------|-----------|-------|------|----------------------|----------|
-| BERT | 110M | Very Fast | 2GB | 20-30 min | Quick baseline |
-| RoBERTa | 355M | Fast | 4GB | 30-40 min | Better accuracy |
-| ALBERT | 12M | Very Fast | 1GB | 15-20 min | Limited resources |
-| GPT-2 | 124M | Fast | 2GB | 30-40 min | Alternative approach |
-| BART | 406M | Fast | 4GB | 40-60 min | Sequence-to-sequence |
-| T5 | 220M | Fast | 4GB | 40-60 min | Flexible architecture |
+| Model | Parameters | Best For |
+|-------|-----------|----------|
+| **BERT** | 110M | Quick baseline, general use |
+| **RoBERTa** | 355M | Better accuracy, production |
+| **ALBERT** | 12M | Limited resources, fastest |
+| **GPT-2** | 124M | Generative approach |
+| **BART** | 406M | Sequence tasks |
+| **T5** | 220M | Flexible architecture |
 
 **Recommendation:** Start with **BERT** for quick testing, then try **RoBERTa** for better results.
 
-### Large Models (8B) - Evaluation Only
+### Large Models (Evaluation Only)
 
-These models provide state-of-the-art embeddings but require more resources and **cannot be fine-tuned** with this code.
+These models provide state-of-the-art embeddings but **cannot be fine-tuned** with this codebase.
+
+| Model | Parameters | Notes |
+|-------|-----------|-------|
+| **Gemma2** | 8B | Requires substantial GPU memory |
+| **Llama3** | 8B | Requires substantial GPU memory |
+| **Qwen2** | 8B | Requires substantial GPU memory |
 
 ```bash
-# Optional: Include large models in pretrained evaluation
+# Enable large model evaluation (optional)
 python3 embeddings_from_pretrained.py --enable_LLM
 ```
 
-| Model | Model Size | Speed | VRAM | Fine-tuning |
-|-------|-----------|-------|------|-----------|
-| Gemma2 | 8B | Medium | 8-16GB | ❌ Not available |
-| Llama3 | 8B | Medium | 10-16GB | ❌ Not available |
-| Qwen2 | 8B | Medium | 8-16GB | ❌ Not available |
+## Adapting to Your Food Product
 
-Use large models if you:
-- Have a GPU with 16GB+ VRAM
-- Want state-of-the-art embeddings for analysis
-- Don't need to fine-tune
+The framework is designed to work with **any food product**. Here are complete examples:
+
+### Example 1: Wine Analysis
+```python
+wine_attributes = {
+    'fruity': {
+        'citrus': ['lemon', 'lime', 'grapefruit'],
+        'stone_fruit': ['peach', 'apricot'],
+        'berry': ['strawberry', 'raspberry']
+    },
+    'floral': ['rose', 'violet', 'jasmine'],
+    'spicy': ['pepper', 'cinnamon', 'clove']
+}
+graph = build_graph_from_hierarchy(wine_attributes, root='wine')
+context = create_context_template('wine', 'has', '{0} {1} aroma')
+```
+
+### Example 2: Chocolate Tasting
+```python
+chocolate_profile = {
+    'sweet': ['honey', 'caramel', 'vanilla'],
+    'bitter': ['cocoa', 'dark', 'roasted'],
+    'fruity': {
+        'berry': ['raspberry', 'cherry'],
+        'citrus': ['orange', 'lemon']
+    },
+    'nutty': ['almond', 'hazelnut']
+}
+graph = build_graph_from_hierarchy(chocolate_profile, root='chocolate')
+context = create_context_template('chocolate', 'has', '{0} {1} taste')
+```
+
+### Example 3: Coffee Flavor Wheel
+```python
+# Using CSV file
+# coffee_attributes.csv:
+# attribute,category
+# fruity,root
+# berry,fruity
+# citrus,fruity
+# nutty,root
+# chocolate,root
+
+graph = build_graph_from_csv('coffee_attributes.csv', root='root')
+context = create_context_template('coffee', 'has', '{0} {1} flavor')
+```
+
+**See [GUIDE_FOR_FOOD_RESEARCHERS.ipynb](GUIDE_FOR_FOOD_RESEARCHERS.ipynb) for more examples including cheese, beer, bread, and olive oil.**
 
 ## Understanding Your Results
 
 ### Evaluation Metrics
 
-The evaluation script computes metrics that show how well embeddings preserve relationships between sensory attributes:
+The framework computes metrics showing how well embeddings preserve relationships:
 
-- **Adjacency Matching:** Are directly connected descriptors nearby in embedding space?
-- **Distance Matching:** Do embedding distances match the knowledge graph distances?
-- **L2 vs Angular:** Different geometric perspectives on embedding quality
+- **Adjacency Matching:** Are connected descriptors nearby in embedding space?
+- **Distance Matching:** Do embedding distances match graph distances?
+- **L2 vs Angular:** Different geometric measures of embedding quality
 
 Higher scores indicate better preservation of sensory attribute structure.
 
 ### Using Embeddings for Analysis
 
-Once you have embeddings, you can:
+Once you have embeddings, you can use standard data science tools:
 
-**Statistical Analysis:**
 ```python
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
-from scipy.stats import pearsonr
+from sklearn.decomposition import PCA
+from sklearn.cluster import KMeans
 
-# Load embeddings (pickled numpy arrays)
-# Use sklearn for PCA, clustering, correlation analysis
-# Use scipy for statistical tests
+# Load embeddings
+df = pd.read_csv('wine_embeddings.csv')
+
+# Perform PCA
+pca = PCA(n_components=2)
+reduced = pca.fit_transform(df.iloc[:, 1:])  # Skip description column
+
+# Cluster similar attributes
+kmeans = KMeans(n_clusters=5)
+clusters = kmeans.fit_predict(df.iloc[:, 1:])
+
+# Statistical analysis
+# correlation, t-tests, ANOVA, etc.
 ```
-
-**Visualization:**
-- t-SNE: High-dimensional visualization (interactive notebook included)
-- PCA: Linear dimensionality reduction
-- Clustering: Group similar descriptors (k-means, hierarchical)
-
-**Your Research:**
-- Identify sensory attribute clusters
-- Analyze descriptor relationships
-- Compare models for different food categories
-- Extract features for downstream tasks
 
 ## Troubleshooting
 
-### "Module not found" Errors
+### Module Not Found
 
-```
-ModuleNotFoundError: No module named 'torch'
+```bash
+ModuleNotFoundError: No module named 'sensory_cokge'
 ```
 
-**Solution:**
+**Solution:** Make sure you're in the repository directory and dependencies are installed:
 ```bash
 pip install -r requirements.txt
-python -m pip install --upgrade pip
 ```
 
-Check dependencies:
-```bash
-python -c "import torch; import transformers; print('OK')"
-```
+### Out of Memory
 
-### Out of Memory (CUDA Error)
+If you encounter memory errors:
 
-```
-RuntimeError: CUDA out of memory
-```
-
-**Solutions (try in order):**
 1. Use a smaller model (BERT or ALBERT)
 2. Reduce batch size:
    ```bash
    python3 embeddings_from_pretrained.py --batch_size 2
    ```
-3. Use CPU instead:
+3. Use CPU mode:
    ```bash
    python3 embeddings_from_pretrained.py --device cpu
    ```
-4. Close other GPU applications
 
-Check GPU status:
-```bash
-nvidia-smi
-```
+### Graph Validation Errors
 
-### Scripts Are Slow
-
-**First run is slower** (downloads models from Hugging Face):
-- Verify internet connection
-- Check disk space: `df -h` (need 2GB+ free)
-- Be patient: First BERT download is ~1.2GB
-
-**Fine-tuning is slow on CPU:**
-- GPU is 5-10x faster
-- BERT is fastest model
-- Large models (T5, BART) take longer
-
-**If stuck/frozen:**
-- Check GPU with `nvidia-smi`
-- Verify internet isn't interrupted
-- Consider using CPU-only mode
-
-### CPU-Only Mode
-
-To use CPU without GPU (slower but works):
-
-```bash
-python3 embeddings_from_pretrained.py --device cpu
-python3 finetune_BERT_by_sequence_classification.py --device cpu
-```
-
-**Expected slowdown:** 5-10x slower than GPU. Fine-tuning overnight is normal on CPU.
-
-### Gemma2/Llama3/Qwen2 Models Not Generating
-
-Large models (8B) are **optional** and disabled by default:
-
-```bash
-# Enable large model evaluation
-python3 embeddings_from_pretrained.py --enable_LLM
-```
-
-Requirements:
-- GPU with 16GB+ VRAM
-- ~8GB disk space per model
-- Internet for first download
-- Patience: Inference is slower
-
-## FAQ
-
-**Q: I'm a food researcher with limited computing resources. Where should I start?**
-
-A: Start with BERT (Workflow A). It's fast, accurate, and works on regular computers. You can evaluate it immediately without fine-tuning.
-
-**Q: What's the difference between fine-tuning and using pretrained models?**
-
-A: Pretrained models are already trained on general text, so they understand language well but may not be optimized for your specific sensory descriptors. Fine-tuning adapts the model to your domain, potentially improving embeddings.
-
-**Q: Can I fine-tune Gemma2, Llama3, or Qwen2?**
-
-A: No, this codebase only provides fine-tuning for small models (BERT, RoBERTa, ALBERT, GPT-2, BART, T5). Large models are for evaluation only.
-
-**Q: How long does fine-tuning take?**
-
-A: 30 min - 4 hours on GPU (depending on model).
-- BERT: ~30 min
-- ALBERT: ~20 min
-- RoBERTa/GPT-2: ~40 min
-- BART/T5: ~60 min
-On CPU, expect 5-10x longer.
-
-**Q: Can I modify the sensory descriptors?**
-
-A: Yes! Edit `generate_finetuned_data.py` in the `src/finetune.py` module to customize the knowledge graph for your food type and descriptors.
-
-**Q: Where are my results saved?**
-
-A: All embeddings and models go to `./outputs/` directory. Evaluation results are printed to console and can be exported to CSV using `--layout_file` option.
-
-**Q: Can I use embeddings from multiple models together?**
-
-A: Yes! Each model produces different embeddings. You can load and combine them for ensemble analysis:
 ```python
-import pickle
-
-# Load embeddings from different models
-with open('./outputs/pretrained-BERT_embeddings.pkl', 'rb') as f:
-    bert_embeddings = pickle.load(f)
-
-with open('./outputs/pretrained-RoBERTa_embeddings.pkl', 'rb') as f:
-    roberta_embeddings = pickle.load(f)
-
-# Combine for ensemble analysis
+validation = validate_graph_structure(graph)
+if not validation['is_valid']:
+    print("Issues:", validation['issues'])
+    # Common issues:
+    # - Cycles in graph (circular references)
+    # - Unreachable nodes (disconnected attributes)
+    # - Missing root node
 ```
 
-**Q: What if I want to use different food data than the example?**
+Fix by ensuring:
+- All attributes connect back to root
+- No circular references (A→B→C→A)
+- Proper parent-child relationships
 
-A: The framework is generalizable to any food category. The knowledge graph structure in `src/graph.py` defines the descriptors and relationships. Modify this to match your domain.
+### First Run is Slow
+
+The first run downloads models from the internet. This is normal and only happens once:
+- Small models (BERT): ~500MB download
+- Large models (optional): ~5GB each
+- Models are cached locally for future use
 
 ## Files and Structure
 
@@ -405,17 +380,80 @@ A: The framework is generalizable to any food category. The knowledge graph stru
 - `embeddings_from_finetuned.py` - Generate fine-tuned embeddings
 - `models_evaluation.py` - Evaluate and compare embeddings
 - `generate_finetuned_data.py` - Create training data
-- `finetune_[MODEL]_by_sequence_classification.py` - Fine-tune individual models
+- `finetune_[MODEL]_by_sequence_classification.py` - Fine-tune models
 
 **Notebooks:**
 - `Notebook_embedding_visualization.ipynb` - Visualize embeddings with t-SNE/PCA
 - `Notebook_OOD_visualization.ipynb` - Out-of-distribution analysis
 
+**Documentation:**
+- `GUIDE_FOR_FOOD_RESEARCHERS.ipynb` - **Interactive guide for food researchers with examples**
+- `README.md` - This file
+
 **Source Code:**
-- `src/graph.py` - Knowledge graph definition
-- `src/models.py` - Language model implementations
-- `src/metrics.py` - Evaluation metrics
-- `src/finetune.py` - Fine-tuning logic
+- `sensory_cokge/` - Main package
+  - `graph.py` - Description graph and knowledge graph functions
+  - `models.py` - Language model implementations
+  - `metrics.py` - Evaluation metrics
+  - `finetune.py` - Synthetic data generation
+  - `utils.py` - Utility functions
+  - `__init__.py` - User-friendly API and helper functions
+
+## Core API Reference
+
+### Graph Creation
+- `build_graph_from_hierarchy()` - Create graph from nested dictionary
+- `build_graph_from_csv()` - Create graph from CSV file
+- `create_description_graph()` - Create graph from explicit connections
+- `validate_graph_structure()` - Validate graph is a proper DAG
+
+### Embedding Generation
+- `compute_embeddings()` - Generate embeddings from descriptions
+- `embeddings_to_csv()` - Export embeddings as CSV
+- `evaluate_embeddings()` - Evaluate structural consistency
+
+### Context Templates
+- `create_context_template()` - Generate context following "This [Food] [Verb] [Attribute]" pattern
+
+### Synthetic Data
+- `generate_synthetic_data()` - Create training data from graph
+
+## FAQ
+
+**Q: I'm a food researcher with limited Python experience. Where should I start?**
+
+A: Read [GUIDE_FOR_FOOD_RESEARCHERS.ipynb](GUIDE_FOR_FOOD_RESEARCHERS.ipynb) and follow the Quick Start example above. You only need to modify the dictionary with your food's attributes.
+
+**Q: Can I use this for foods other than coffee?**
+
+A: Yes! The framework works for **any food product**. Examples are provided for wine, cheese, chocolate, coffee, beer, bread, and olive oil. Simply define your food's sensory attributes and create the appropriate context.
+
+**Q: What's the difference between pretrained and fine-tuned models?**
+
+A: Pretrained models work immediately but are general-purpose. Fine-tuning adapts them to your specific domain, potentially improving results for your food category.
+
+**Q: How do I define a valid attribute graph?**
+
+A: Your graph must be a DAG (Directed Acyclic Graph):
+- Start with one root (your food name)
+- Build hierarchically (categories → sub-categories → attributes)
+- No cycles (A→B→C→A is invalid)
+- Use `validate_graph_structure()` to check
+
+**Q: Can I modify the context template?**
+
+A: Yes! Use `create_context_template()` with different verbs:
+- Taste: `create_context_template('cheese', 'tastes', '{0} {1}')`
+- Smell: `create_context_template('coffee', 'smells', '{0} {1}')`
+- Feel: `create_context_template('bread', 'feels', '{0} {1}')`
+
+**Q: Where are results saved?**
+
+A: All embeddings and models go to `./outputs/` directory by default. CSV exports go to your specified filename.
+
+**Q: Can I fine-tune large models (Gemma2, Llama3, Qwen2)?**
+
+A: No, this codebase only provides fine-tuning for small models (BERT, RoBERTa, ALBERT, GPT-2, BART, T5). Large models are for evaluation only.
 
 ## Citation
 
@@ -435,11 +473,10 @@ If you use Sensory-CoKGE in your research, please cite:
 }
 ```
 
-Or in plain text:
+## License
 
-```
-Chang, Y.-T., & Chen, S.-F. (2026). Sensory-CoKGE: A contextualized knowledge
-graph embedding framework using language models for converting text-based food
-attributes into numerical representation. Expert Systems with Applications,
-299(C), 130191. https://doi.org/10.1016/j.eswa.2025.130191
-```
+See LICENSE file for details.
+
+## Contributing
+
+This repository is maintained to support the published research. For questions or issues, please open a GitHub issue.

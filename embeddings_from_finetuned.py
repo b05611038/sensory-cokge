@@ -4,11 +4,11 @@ import argparse
 
 import torch
 
-from src.utils import (init_directory,
-                       load_pickle_obj,
-                       save_object)
+from sensory_cokge.utils import (init_directory,
+                                 load_pickle_obj,
+                                 save_object)
 
-from src.models import (ALBERT_embeddings,
+from sensory_cokge.models import (ALBERT_embeddings,
                         ALBERT_NAME,
                         BERT_embeddings,
                         BERT_NAME,

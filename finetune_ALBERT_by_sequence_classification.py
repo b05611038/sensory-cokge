@@ -11,8 +11,8 @@ from transformers import (AlbertTokenizer,
                           Trainer,
                           TrainingArguments)
 
-from src.models import ALBERT_NAME
-from src.utils import parse_training_args
+from sensory_cokge.models import ALBERT_NAME
+from sensory_cokge.utils import parse_training_args
 
 def main():
     parser = argparse.ArgumentParser()

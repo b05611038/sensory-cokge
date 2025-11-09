@@ -2,8 +2,8 @@ import os
 import sys
 import argparse
 
-from src.utils import load_pickle_obj
-from src.metrics import EvaluationMetrics
+from sensory_cokge.utils import load_pickle_obj
+from sensory_cokge.metrics import EvaluationMetrics
 
 def main():
     parser = argparse.ArgumentParser()

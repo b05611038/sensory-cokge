@@ -3,11 +3,11 @@ import sys
 import copy
 import argparse
 
-from src.utils import (save_object,
-                       load_pickle_obj)
+from sensory_cokge.utils import (save_object,
+                                 load_pickle_obj)
 
-from src.relative_embedding import (AnchorDescriptors,
-                                    construct_relative_embeddings)
+from sensory_cokge.relative_embedding import (AnchorDescriptors,
+                                              construct_relative_embeddings)
 
 def main():
     anchor_descirptions = copy.deepcopy(AnchorDescriptors)

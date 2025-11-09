@@ -5,7 +5,7 @@ import numpy as np
 from igraph import Graph, plot
 
 __all__ = ['description_graph', 'graph_properties', 'normalize_weighted_adjacency',
-        'CONNECTIONS', 'NOT_COUNT_DESCRIPTIONS', 'CONNENTION_DISTANCES', 'CoffeeDescriptionGraph']
+        'CONNECTIONS', 'NOT_COUNT_DESCRIPTIONS', 'CONNENTION_DISTANCES', 'DescriptionGraph']
 
 NOT_COUNT_DESCRIPTIONS = ['floral (inner layer)', 'floral (middle layer)', 
         'green/vegetative (inner layer)', 'green/vegetative (middle layer)']
@@ -24,12 +24,12 @@ CONNENTION_DISTANCES = {
                     'unknown': 1.},
 }
 
-class CoffeeDescriptionGraph:
+class DescriptionGraph:
     def __init__(self,
             descriptions,
             connections,
             root = None,
-            graph_name = 'SYSTEM', 
+            graph_name = 'SYSTEM',
             connection_distances = None,
             connection_text_length = 20,
             dynamic = False):
@@ -553,12 +553,12 @@ def description_graph(
     connections = connections_transform_from_parents_of_descriptions(parents_of_descriptions,
                                                                      duplicate)
 
-    graph = CoffeeDescriptionGraph(all_descriptions,
-                                   connections,
-                                   root = 'root',
-                                   graph_name = graph_name,
-                                   connection_distances = connection_distances,
-                                   dynamic = True)
+    graph = DescriptionGraph(all_descriptions,
+                             connections,
+                             root = 'root',
+                             graph_name = graph_name,
+                             connection_distances = connection_distances,
+                             dynamic = True)
 
     if not duplicate:
         for description in exclude_descriptions:

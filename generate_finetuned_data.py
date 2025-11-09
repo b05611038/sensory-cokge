@@ -1,7 +1,7 @@
 import os
 import argparse
 
-from src.finetune import generate_finetune_data
+from sensory_cokge.finetune import generate_finetune_data
 
 def layout_data(data, filename):
     assert len(data) > 0
