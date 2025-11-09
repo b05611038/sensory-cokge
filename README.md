@@ -62,6 +62,7 @@ from sensory_cokge import (
     create_context_template,
     compute_embeddings,
     embeddings_to_csv,
+    evaluate_embeddings,
     validate_graph_structure
 )
 
@@ -93,7 +94,11 @@ embeddings = compute_embeddings(
     device='auto'
 )
 
-# 6. Export to CSV for analysis
+# 6. Evaluate how well embeddings preserve graph structure
+results = evaluate_embeddings(embeddings, graph=graph)
+print(f"Distance Matching Score: {results['distances_matching_l2']:.4f}")
+
+# 7. Export to CSV for analysis
 embeddings_to_csv(embeddings, 'wine_embeddings.csv')
 print("Done! Check wine_embeddings.csv")
 ```
@@ -286,6 +291,89 @@ context = create_context_template('coffee', 'has', '{0} {1} flavor')
 
 **See [GUIDE_FOR_FOOD_RESEARCHERS.ipynb](GUIDE_FOR_FOOD_RESEARCHERS.ipynb) for more examples including cheese, beer, bread, and olive oil.**
 
+## Complete Workflow Examples
+
+### Example: Evaluating Embeddings with Custom Graphs
+
+After generating embeddings for your custom food graph, evaluate how well they preserve the graph structure:
+
+```python
+from sensory_cokge import (
+    build_graph_from_hierarchy,
+    create_context_template,
+    compute_embeddings,
+    evaluate_embeddings
+)
+
+# 1. Build custom wine graph
+wine_attributes = {
+    'fruity': ['apple', 'pear', 'citrus', 'berry'],
+    'floral': ['rose', 'violet', 'jasmine'],
+    'spicy': ['pepper', 'cinnamon', 'clove']
+}
+wine_graph = build_graph_from_hierarchy(wine_attributes, root='wine')
+
+# 2. Generate embeddings
+context = create_context_template('wine', 'has', '{0} {1} aroma')
+attributes = [d for d in wine_graph.descriptions if d != 'wine']
+embeddings = compute_embeddings(attributes, model_name='BERT', context=context)
+
+# 3. Evaluate embeddings against your custom graph
+results = evaluate_embeddings(embeddings, graph=wine_graph)
+
+# 4. Check results
+print(f"L2 Distance Matching: {results['distances_matching_l2']:.4f}")
+print(f"Angular Distance Matching: {results['distances_matching_angle']:.4f}")
+print(f"Adjacency Matching: {results['adjacency_matching_l2']:.4f}")
+
+# Higher scores = better preservation of graph structure
+```
+
+**Note:** If you don't provide a `graph` parameter, `evaluate_embeddings()` defaults to the coffee flavor wheel.
+
+### Example: Generating Synthetic Training Data for Custom Foods
+
+Create training data for fine-tuning models on your specific food domain:
+
+```python
+from sensory_cokge import (
+    build_graph_from_hierarchy,
+    generate_synthetic_data
+)
+
+# 1. Build custom cheese graph
+cheese_flavors = {
+    'dairy': {
+        'fresh': ['milk', 'cream', 'butter'],
+        'aged': ['sharp', 'tangy']
+    },
+    'savory': ['umami', 'salty'],
+    'pungent': ['funky', 'ammonia']
+}
+cheese_graph = build_graph_from_hierarchy(cheese_flavors, root='cheese')
+
+# 2. Generate synthetic training data for your custom graph
+data = generate_synthetic_data(
+    train_samples=10000,
+    eval_samples=1000,
+    graph=cheese_graph,           # Your custom graph
+    food_name='cheese',            # Food name for text generation
+    output_dir='./cheese_training',
+    save_csv=True
+)
+
+print(f"Generated {len(data['train'])} training samples")
+print(f"Generated {len(data['eval'])} evaluation samples")
+print(f"Files saved to ./cheese_training/")
+
+# 3. Use the generated data to fine-tune a model
+# See finetune_BERT_by_sequence_classification.py for details
+```
+
+**Default behavior:** If you don't provide a `graph` parameter, it generates data for the coffee flavor wheel.
+
+**Custom foods:** By providing both `graph` and `food_name`, you can generate training data for wine, cheese, chocolate, or any other food product.
+
 ## Understanding Your Results
 
 ### Evaluation Metrics
@@ -402,21 +490,21 @@ The first run downloads models from the internet. This is normal and only happen
 ## Core API Reference
 
 ### Graph Creation
-- `build_graph_from_hierarchy()` - Create graph from nested dictionary
-- `build_graph_from_csv()` - Create graph from CSV file
-- `create_description_graph()` - Create graph from explicit connections
-- `validate_graph_structure()` - Validate graph is a proper DAG
+- `build_graph_from_hierarchy(hierarchy, root, graph_name)` - Create graph from nested dictionary
+- `build_graph_from_csv(filepath, child_column, parent_column, root)` - Create graph from CSV file
+- `create_description_graph(descriptions, connections, root)` - Create graph from explicit connections
+- `validate_graph_structure(graph)` - Validate graph is a proper DAG
 
 ### Embedding Generation
-- `compute_embeddings()` - Generate embeddings from descriptions
-- `embeddings_to_csv()` - Export embeddings as CSV
-- `evaluate_embeddings()` - Evaluate structural consistency
+- `compute_embeddings(descriptions, model_name, context, device, ...)` - Generate embeddings from descriptions
+- `embeddings_to_csv(embeddings, filepath)` - Export embeddings as CSV
+- `evaluate_embeddings(embeddings, graph, embedding_type)` - Evaluate structural consistency against a graph (supports custom graphs)
 
 ### Context Templates
-- `create_context_template()` - Generate context following "This [Food] [Verb] [Attribute]" pattern
+- `create_context_template(food_name, verb, attribute_placeholder)` - Generate context following "This [Food] [Verb] [Attribute]" pattern
 
 ### Synthetic Data
-- `generate_synthetic_data()` - Create training data from graph
+- `generate_synthetic_data(train_samples, eval_samples, graph, food_name, ...)` - Create training data from graph (supports custom graphs for any food)
 
 ## FAQ
 
