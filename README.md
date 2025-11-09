@@ -98,7 +98,7 @@ embeddings_to_csv(embeddings, 'wine_embeddings.csv')
 print("Done! Check wine_embeddings.csv")
 ```
 
-**For detailed examples with other foods (cheese, chocolate, coffee), see [GUIDE_FOR_FOOD_RESEARCHERS.md](GUIDE_FOR_FOOD_RESEARCHERS.md)**
+**For detailed examples with other foods (cheese, chocolate, coffee), see [GUIDE_FOR_FOOD_RESEARCHERS.ipynb](GUIDE_FOR_FOOD_RESEARCHERS.ipynb)**
 
 ## User-Friendly Helper Functions
 
@@ -284,7 +284,7 @@ graph = build_graph_from_csv('coffee_attributes.csv', root='root')
 context = create_context_template('coffee', 'has', '{0} {1} flavor')
 ```
 
-**See [GUIDE_FOR_FOOD_RESEARCHERS.md](GUIDE_FOR_FOOD_RESEARCHERS.md) for more examples including cheese, beer, bread, and olive oil.**
+**See [GUIDE_FOR_FOOD_RESEARCHERS.ipynb](GUIDE_FOR_FOOD_RESEARCHERS.ipynb) for more examples including cheese, beer, bread, and olive oil.**
 
 ## Understanding Your Results
 
@@ -387,7 +387,7 @@ The first run downloads models from the internet. This is normal and only happen
 - `Notebook_OOD_visualization.ipynb` - Out-of-distribution analysis
 
 **Documentation:**
-- `GUIDE_FOR_FOOD_RESEARCHERS.md` - **Comprehensive guide for food researchers**
+- `GUIDE_FOR_FOOD_RESEARCHERS.ipynb` - **Interactive guide for food researchers with examples**
 - `README.md` - This file
 
 **Source Code:**
@@ -422,7 +422,7 @@ The first run downloads models from the internet. This is normal and only happen
 
 **Q: I'm a food researcher with limited Python experience. Where should I start?**
 
-A: Read [GUIDE_FOR_FOOD_RESEARCHERS.md](GUIDE_FOR_FOOD_RESEARCHERS.md) and follow the Quick Start example above. You only need to modify the dictionary with your food's attributes.
+A: Read [GUIDE_FOR_FOOD_RESEARCHERS.ipynb](GUIDE_FOR_FOOD_RESEARCHERS.ipynb) and follow the Quick Start example above. You only need to modify the dictionary with your food's attributes.
 
 **Q: Can I use this for foods other than coffee?**
 
