@@ -11,5 +11,8 @@ sentencepiece
 protobuf
 opentsne
 adjustText
-laser_encoders
 tensorboardX
+pyyaml
+
+# Optional dependencies (not required for core functionality)
+# laser_encoders - only needed for Laser_embeddings function (used in paper results)
