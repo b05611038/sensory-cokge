@@ -408,6 +408,8 @@ def generate_synthetic_data(
         eval_samples=10000,
         output_dir='./outputs',
         graph_name='coffee_flavor_wheel(unduplicated)',
+        graph=None,
+        food_name=None,
         save_csv=True):
     """
     Generate synthetic training data for fine-tuning language models.
@@ -425,6 +427,14 @@ def generate_synthetic_data(
         Directory to save CSV files. Default: './outputs'
     graph_name : str, optional
         Name of description graph to use. Default: 'coffee_flavor_wheel(unduplicated)'
+        Only used if graph=None
+    graph : DescriptionGraph, optional
+        Custom description graph for your food product. If provided, overrides graph_name.
+        Default: None (uses coffee flavor wheel)
+    food_name : str, optional
+        Name of the food product for generated text (e.g., 'wine', 'cheese', 'chocolate').
+        If None, will be inferred from graph.graph_name or graph.root.
+        Default: None (uses 'coffee' for default graph)
     save_csv : bool, optional
         Whether to save data as CSV files. Default: True
 
@@ -436,16 +446,29 @@ def generate_synthetic_data(
 
     Examples
     --------
+    >>> # Default: Generate data for coffee flavor wheel
     >>> data = generate_synthetic_data(train_samples=1000, eval_samples=100)
     >>> print(f"Generated {len(data['train'])} training samples")
     >>> print(f"First sample: {data['train'][0]['selections'][0]}")
+
+    >>> # Custom: Generate data for wine
+    >>> wine_graph = build_graph_from_hierarchy({'fruity': ['apple', 'pear']}, root='wine')
+    >>> wine_data = generate_synthetic_data(
+    ...     train_samples=1000,
+    ...     eval_samples=100,
+    ...     graph=wine_graph,
+    ...     food_name='wine',
+    ...     output_dir='./wine_data'
+    ... )
     """
     data_number = {'train': train_samples, 'eval': eval_samples}
 
     generated_data = generate_finetune_data(
         data_number=data_number,
         graph_name=graph_name,
-        exclude_descriptions=NOT_COUNT_DESCRIPTIONS,
+        graph=graph,
+        food_name=food_name,
+        exclude_descriptions=NOT_COUNT_DESCRIPTIONS if graph is None else [],
         progress=True
     )
 
