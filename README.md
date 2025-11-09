@@ -352,12 +352,11 @@ cheese_flavors = {
 }
 cheese_graph = build_graph_from_hierarchy(cheese_flavors, root='cheese')
 
-# 2. Generate synthetic training data for your custom graph
+# 2. Generate synthetic training data (food_name auto-detected from root!)
 data = generate_synthetic_data(
     train_samples=10000,
     eval_samples=1000,
-    graph=cheese_graph,           # Your custom graph
-    food_name='cheese',            # Food name for text generation
+    graph=cheese_graph,           # food_name will auto-detect as 'cheese'
     output_dir='./cheese_training',
     save_csv=True
 )
@@ -366,13 +365,27 @@ print(f"Generated {len(data['train'])} training samples")
 print(f"Generated {len(data['eval'])} evaluation samples")
 print(f"Files saved to ./cheese_training/")
 
-# 3. Use the generated data to fine-tune a model
+# 3. Optional: Override auto-detected food name for more specific naming
+wine_data = generate_synthetic_data(
+    train_samples=5000,
+    eval_samples=500,
+    graph=wine_graph,
+    food_name='red wine',  # Override to be more specific
+    output_dir='./wine_training'
+)
+
+# 4. Use the generated data to fine-tune a model
 # See finetune_BERT_by_sequence_classification.py for details
 ```
 
+**Smart food name detection:** When you provide a custom `graph`, the `food_name` is automatically detected from the graph's root name. For example:
+- `build_graph_from_hierarchy(..., root='wine')` → Generated text uses "wine"
+- `build_graph_from_hierarchy(..., root='cheese')` → Generated text uses "cheese"
+- `build_graph_from_hierarchy(..., root='chocolate')` → Generated text uses "chocolate"
+
 **Default behavior:** If you don't provide a `graph` parameter, it generates data for the coffee flavor wheel.
 
-**Custom foods:** By providing both `graph` and `food_name`, you can generate training data for wine, cheese, chocolate, or any other food product.
+**Custom override:** You can still explicitly set `food_name` to override the auto-detection (e.g., `food_name='red wine'` instead of just 'wine').
 
 ## Understanding Your Results
 
@@ -504,7 +517,7 @@ The first run downloads models from the internet. This is normal and only happen
 - `create_context_template(food_name, verb, attribute_placeholder)` - Generate context following "This [Food] [Verb] [Attribute]" pattern
 
 ### Synthetic Data
-- `generate_synthetic_data(train_samples, eval_samples, graph, food_name, ...)` - Create training data from graph (supports custom graphs for any food)
+- `generate_synthetic_data(train_samples, eval_samples, graph, food_name, ...)` - Create training data from graph (supports custom graphs for any food; food_name auto-detects from graph root)
 
 ## FAQ
 

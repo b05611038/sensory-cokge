@@ -409,7 +409,7 @@ def generate_synthetic_data(
         output_dir='./outputs',
         graph=None,
         graph_name='coffee_flavor_wheel(unduplicated)',
-        food_name='coffee',
+        food_name=None,
         save_csv=True):
     """
     Generate synthetic training data for fine-tuning language models.
@@ -431,8 +431,9 @@ def generate_synthetic_data(
         Name of description graph to use (only used if graph is None).
         Default: 'coffee_flavor_wheel(unduplicated)'
     food_name : str, optional
-        Name of food product for generating text (e.g., 'wine', 'cheese').
-        Only used with custom graphs. Default: 'coffee'
+        Name of food product for generating text (e.g., 'wine', 'cheese', 'chocolate').
+        If None and a custom graph is provided, automatically uses the graph's root name.
+        If None and using default coffee graph, uses 'coffee'. Default: None
     save_csv : bool, optional
         Whether to save data as CSV files. Default: True
 
@@ -449,7 +450,7 @@ def generate_synthetic_data(
     >>> print(f"Generated {len(data['train'])} training samples")
     >>> print(f"First sample: {data['train'][0]['selections'][0]}")
 
-    >>> # Example 2: Custom wine graph
+    >>> # Example 2: Custom wine graph (food_name auto-detected from root)
     >>> wine_hierarchy = {
     ...     'fruity': ['apple', 'pear', 'citrus'],
     ...     'floral': ['rose', 'violet'],
@@ -459,15 +460,31 @@ def generate_synthetic_data(
     >>> wine_data = generate_synthetic_data(
     ...     train_samples=5000,
     ...     eval_samples=500,
-    ...     graph=wine_graph,
-    ...     food_name='wine',
+    ...     graph=wine_graph,  # food_name will auto-detect as 'wine' from graph root
     ...     output_dir='./wine_training_data'
+    ... )
+
+    >>> # Example 3: Custom graph with explicit food name
+    >>> cheese_graph = build_graph_from_hierarchy(cheese_hierarchy, root='cheese')
+    >>> cheese_data = generate_synthetic_data(
+    ...     train_samples=2000,
+    ...     eval_samples=200,
+    ...     graph=cheese_graph,
+    ...     food_name='artisan cheese',  # Override with more specific name
+    ...     output_dir='./cheese_training_data'
     ... )
     """
     import random
     import hashlib
 
     data_number = {'train': train_samples, 'eval': eval_samples}
+
+    # Auto-detect food_name from graph root if not specified
+    if food_name is None:
+        if graph is not None and graph.root is not None:
+            food_name = graph.root
+        else:
+            food_name = 'coffee'  # Default for coffee flavor wheel
 
     # Helper function for hashing sampled combinations
     def _simple_hash(sampled_list):
