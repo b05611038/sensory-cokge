@@ -6,12 +6,12 @@ from torch.utils.data import DataLoader, Dataset
 from transformers import (AlbertTokenizer,
                           AlbertModel,
                           AutoTokenizer,
-                          BertTokenizer, 
+                          BertTokenizer,
                           BertModel,
-                          BartTokenizer, 
+                          BartTokenizer,
                           BartModel,
                           Gemma2Model,
-                          GPT2Tokenizer, 
+                          GPT2Tokenizer,
                           GPT2Model,
                           LlamaModel,
                           Qwen2Model,
@@ -20,8 +20,6 @@ from transformers import (AlbertTokenizer,
                           RobertaModel,
                           T5Tokenizer,
                           T5Model)
-
-from laser_encoders import LaserEncoderPipeline
 
 from .utils import use_a_or_an
 
@@ -325,6 +323,16 @@ def Laser_embeddings(descriptions,
     # for demo, not support GPU
 
     assert batch_size == 1
+
+    # Lazy import laser_encoders (optional dependency)
+    try:
+        from laser_encoders import LaserEncoderPipeline
+    except ImportError:
+        raise ImportError(
+            "laser_encoders is required for Laser_embeddings but is not installed. "
+            "This is an optional dependency used only for specific paper results. "
+            "Install it with: pip install laser_encoders"
+        )
 
     embeddings, texts = {}, []
     for des_idx in range(len(descriptions)):
