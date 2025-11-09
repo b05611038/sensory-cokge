@@ -3,11 +3,11 @@ import argparse
 
 import torch
 
-from src.utils import (init_directory,
-                       save_object)
+from sensory_cokge.utils import (init_directory,
+                                 save_object)
 
-from src.graph import graph_properties
-from src.models import (ALBERT_embeddings,
+from sensory_cokge.graph import graph_properties
+from sensory_cokge.models import (ALBERT_embeddings,
                         ALBERT_NAME,
                         BERT_embeddings,
                         BERT_NAME,

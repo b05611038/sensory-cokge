@@ -11,8 +11,8 @@ from transformers import (BartTokenizer,
                           Trainer, 
                           TrainingArguments)
 
-from src.models import BART_NAME
-from src.utils import parse_training_args
+from sensory_cokge.models import BART_NAME
+from sensory_cokge.utils import parse_training_args
 
 def main():
     parser = argparse.ArgumentParser()

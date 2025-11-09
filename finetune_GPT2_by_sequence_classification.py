@@ -11,8 +11,8 @@ from transformers import (GPT2Tokenizer,
                           Trainer,
                           TrainingArguments)
 
-from src.models import GPT2_NAME
-from src.utils import parse_training_args
+from sensory_cokge.models import GPT2_NAME
+from sensory_cokge.utils import parse_training_args
 
 def main():
     parser = argparse.ArgumentParser()

@@ -1,5 +1,5 @@
-from src.models import (BERT_embeddings,
-                        Laser_embeddings)
+from sensory_cokge.models import (BERT_embeddings,
+                                  Laser_embeddings)
 
 def main():
     brewing_malt_context = 'This brewing malt has {0} {1} odor.'

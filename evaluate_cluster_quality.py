@@ -6,9 +6,9 @@ import torch.nn.functional as F
 import numpy as np
 import pandas as pd
 
-from src.utils import load_pickle_obj
-from src.relative_embedding import DescriptorColors
-from src.graph import description_graph
+from sensory_cokge.utils import load_pickle_obj
+from sensory_cokge.relative_embedding import DescriptorColors
+from sensory_cokge.graph import description_graph
 
 def concat_folder(file_dict, folder):
     for ftype in file_dict:
