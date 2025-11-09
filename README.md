@@ -75,7 +75,7 @@ wine_attributes = {
 }
 
 # 2. Build the attribute graph
-graph = build_graph_from_hierarchy(wine_attributes, root='wine')
+graph = build_graph_from_hierarchy(wine_attributes, graph_name='wine_aromas')
 
 # 3. Validate your graph structure
 validation = validate_graph_structure(graph)
@@ -122,7 +122,7 @@ cheese_flavors = {
     'pungent': ['funky', 'ammonia']
 }
 
-graph = build_graph_from_hierarchy(cheese_flavors, root='cheese')
+graph = build_graph_from_hierarchy(cheese_flavors, graph_name='cheese_flavors')
 ```
 
 ### Build Graphs from CSV Files
@@ -139,7 +139,7 @@ from sensory_cokge import build_graph_from_csv
 graph = build_graph_from_csv('my_attributes.csv',
                               child_column='attribute',
                               parent_column='category',
-                              root='root')
+                              graph_name='custom_attributes')
 ```
 
 ### Create Context Templates
@@ -255,7 +255,7 @@ wine_attributes = {
     'floral': ['rose', 'violet', 'jasmine'],
     'spicy': ['pepper', 'cinnamon', 'clove']
 }
-graph = build_graph_from_hierarchy(wine_attributes, root='wine')
+graph = build_graph_from_hierarchy(wine_attributes, graph_name='wine_aromas')
 context = create_context_template('wine', 'has', '{0} {1} aroma')
 ```
 
@@ -270,7 +270,7 @@ chocolate_profile = {
     },
     'nutty': ['almond', 'hazelnut']
 }
-graph = build_graph_from_hierarchy(chocolate_profile, root='chocolate')
+graph = build_graph_from_hierarchy(chocolate_profile, graph_name='chocolate_profile')
 context = create_context_template('chocolate', 'has', '{0} {1} taste')
 ```
 
@@ -285,7 +285,7 @@ context = create_context_template('chocolate', 'has', '{0} {1} taste')
 # nutty,root
 # chocolate,root
 
-graph = build_graph_from_csv('coffee_attributes.csv', root='root')
+graph = build_graph_from_csv('coffee_attributes.csv', graph_name='coffee_attributes')
 context = create_context_template('coffee', 'has', '{0} {1} flavor')
 ```
 
@@ -311,7 +311,7 @@ wine_attributes = {
     'floral': ['rose', 'violet', 'jasmine'],
     'spicy': ['pepper', 'cinnamon', 'clove']
 }
-wine_graph = build_graph_from_hierarchy(wine_attributes, root='wine')
+wine_graph = build_graph_from_hierarchy(wine_attributes, graph_name='wine_aromas')
 
 # 2. Generate embeddings
 context = create_context_template('wine', 'has', '{0} {1} aroma')
@@ -350,14 +350,14 @@ cheese_flavors = {
     'savory': ['umami', 'salty'],
     'pungent': ['funky', 'ammonia']
 }
-cheese_graph = build_graph_from_hierarchy(cheese_flavors, root='cheese')
+cheese_graph = build_graph_from_hierarchy(cheese_flavors,
+                                          graph_name='cheese_flavor_attributes')
 
-# 2. Generate synthetic training data for your custom graph
+# 2. Generate synthetic training data (food_name auto-detected from graph_name!)
 data = generate_synthetic_data(
     train_samples=10000,
     eval_samples=1000,
-    graph=cheese_graph,           # Your custom graph
-    food_name='cheese',            # Food name for text generation
+    graph=cheese_graph,           # food_name auto-detects as 'cheese' from graph_name
     output_dir='./cheese_training',
     save_csv=True
 )
@@ -366,13 +366,29 @@ print(f"Generated {len(data['train'])} training samples")
 print(f"Generated {len(data['eval'])} evaluation samples")
 print(f"Files saved to ./cheese_training/")
 
-# 3. Use the generated data to fine-tune a model
+# 3. Optional: Override auto-detected food name for more specific naming
+wine_graph = build_graph_from_hierarchy(wine_attrs,
+                                         graph_name='wine_aromas')
+wine_data = generate_synthetic_data(
+    train_samples=5000,
+    eval_samples=500,
+    graph=wine_graph,
+    food_name='red wine',  # Override to be more specific
+    output_dir='./wine_training'
+)
+
+# 4. Use the generated data to fine-tune a model
 # See finetune_BERT_by_sequence_classification.py for details
 ```
 
+**Smart food name detection:** When you provide a custom `graph`, the `food_name` is automatically extracted from `graph.graph_name`. For example:
+- `build_graph_from_hierarchy(..., graph_name='wine_flavor_wheel')` → Generated text uses "wine"
+- `build_graph_from_hierarchy(..., graph_name='cheese_attributes')` → Generated text uses "cheese"
+- `build_graph_from_hierarchy(..., graph_name='chocolate_taste_profile')` → Generated text uses "chocolate"
+
 **Default behavior:** If you don't provide a `graph` parameter, it generates data for the coffee flavor wheel.
 
-**Custom foods:** By providing both `graph` and `food_name`, you can generate training data for wine, cheese, chocolate, or any other food product.
+**Custom override:** You can still explicitly set `food_name` to override the auto-detection (e.g., `food_name='red wine'` instead of just 'wine').
 
 ## Understanding Your Results
 
@@ -504,7 +520,7 @@ The first run downloads models from the internet. This is normal and only happen
 - `create_context_template(food_name, verb, attribute_placeholder)` - Generate context following "This [Food] [Verb] [Attribute]" pattern
 
 ### Synthetic Data
-- `generate_synthetic_data(train_samples, eval_samples, graph, food_name, ...)` - Create training data from graph (supports custom graphs for any food)
+- `generate_synthetic_data(train_samples, eval_samples, graph, food_name, ...)` - Create training data from graph (supports custom graphs for any food; food_name auto-extracts from graph.graph_name)
 
 ## FAQ
 
