@@ -432,7 +432,8 @@ def generate_synthetic_data(
         Default: 'coffee_flavor_wheel(unduplicated)'
     food_name : str, optional
         Name of food product for generating text (e.g., 'wine', 'cheese', 'chocolate').
-        If None and a custom graph is provided, automatically uses the graph's root name.
+        If None and a custom graph is provided, automatically extracts from graph.graph_name.
+        (e.g., 'wine_flavor_wheel' → 'wine', 'cheese_attributes' → 'cheese').
         If None and using default coffee graph, uses 'coffee'. Default: None
     save_csv : bool, optional
         Whether to save data as CSV files. Default: True
@@ -450,17 +451,18 @@ def generate_synthetic_data(
     >>> print(f"Generated {len(data['train'])} training samples")
     >>> print(f"First sample: {data['train'][0]['selections'][0]}")
 
-    >>> # Example 2: Custom wine graph (food_name auto-detected from root)
+    >>> # Example 2: Custom wine graph (food_name auto-detected from graph_name)
     >>> wine_hierarchy = {
     ...     'fruity': ['apple', 'pear', 'citrus'],
     ...     'floral': ['rose', 'violet'],
     ...     'spicy': ['pepper', 'cinnamon']
     ... }
-    >>> wine_graph = build_graph_from_hierarchy(wine_hierarchy, root='wine')
+    >>> wine_graph = build_graph_from_hierarchy(wine_hierarchy, root='wine',
+    ...                                          graph_name='wine_flavor_wheel')
     >>> wine_data = generate_synthetic_data(
     ...     train_samples=5000,
     ...     eval_samples=500,
-    ...     graph=wine_graph,  # food_name will auto-detect as 'wine' from graph root
+    ...     graph=wine_graph,  # food_name will auto-detect as 'wine' from graph_name
     ...     output_dir='./wine_training_data'
     ... )
 
@@ -476,13 +478,35 @@ def generate_synthetic_data(
     """
     import random
     import hashlib
+    import re
 
     data_number = {'train': train_samples, 'eval': eval_samples}
 
-    # Auto-detect food_name from graph root if not specified
+    # Helper function to extract food name from graph_name
+    def _extract_food_name_from_graph_name(graph_name_str):
+        """
+        Extract food name from graph_name string.
+        Examples:
+            'wine_flavor_wheel' -> 'wine'
+            'cheese_attributes' -> 'cheese'
+            'coffee_flavor_wheel(unduplicated)' -> 'coffee'
+            'custom_food_graph' -> 'food'
+        """
+        if not graph_name_str:
+            return 'coffee'
+
+        # Remove parentheses and their contents
+        cleaned = re.sub(r'\([^)]*\)', '', graph_name_str)
+        # Get first word before underscore, dash, or space
+        match = re.match(r'^([a-zA-Z]+)', cleaned)
+        if match:
+            return match.group(1).lower()
+        return 'coffee'  # Fallback
+
+    # Auto-detect food_name from graph.graph_name if not specified
     if food_name is None:
-        if graph is not None and graph.root is not None:
-            food_name = graph.root
+        if graph is not None and hasattr(graph, 'graph_name') and graph.graph_name:
+            food_name = _extract_food_name_from_graph_name(graph.graph_name)
         else:
             food_name = 'coffee'  # Default for coffee flavor wheel
 

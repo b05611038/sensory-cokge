@@ -350,13 +350,14 @@ cheese_flavors = {
     'savory': ['umami', 'salty'],
     'pungent': ['funky', 'ammonia']
 }
-cheese_graph = build_graph_from_hierarchy(cheese_flavors, root='cheese')
+cheese_graph = build_graph_from_hierarchy(cheese_flavors, root='cheese',
+                                          graph_name='cheese_flavor_attributes')
 
-# 2. Generate synthetic training data (food_name auto-detected from root!)
+# 2. Generate synthetic training data (food_name auto-detected from graph_name!)
 data = generate_synthetic_data(
     train_samples=10000,
     eval_samples=1000,
-    graph=cheese_graph,           # food_name will auto-detect as 'cheese'
+    graph=cheese_graph,           # food_name auto-detects as 'cheese' from graph_name
     output_dir='./cheese_training',
     save_csv=True
 )
@@ -366,6 +367,8 @@ print(f"Generated {len(data['eval'])} evaluation samples")
 print(f"Files saved to ./cheese_training/")
 
 # 3. Optional: Override auto-detected food name for more specific naming
+wine_graph = build_graph_from_hierarchy(wine_attrs, root='wine',
+                                         graph_name='wine_aromas')
 wine_data = generate_synthetic_data(
     train_samples=5000,
     eval_samples=500,
@@ -378,10 +381,10 @@ wine_data = generate_synthetic_data(
 # See finetune_BERT_by_sequence_classification.py for details
 ```
 
-**Smart food name detection:** When you provide a custom `graph`, the `food_name` is automatically detected from the graph's root name. For example:
-- `build_graph_from_hierarchy(..., root='wine')` → Generated text uses "wine"
-- `build_graph_from_hierarchy(..., root='cheese')` → Generated text uses "cheese"
-- `build_graph_from_hierarchy(..., root='chocolate')` → Generated text uses "chocolate"
+**Smart food name detection:** When you provide a custom `graph`, the `food_name` is automatically extracted from `graph.graph_name`. For example:
+- `build_graph_from_hierarchy(..., graph_name='wine_flavor_wheel')` → Generated text uses "wine"
+- `build_graph_from_hierarchy(..., graph_name='cheese_attributes')` → Generated text uses "cheese"
+- `build_graph_from_hierarchy(..., graph_name='chocolate_taste_profile')` → Generated text uses "chocolate"
 
 **Default behavior:** If you don't provide a `graph` parameter, it generates data for the coffee flavor wheel.
 
@@ -517,7 +520,7 @@ The first run downloads models from the internet. This is normal and only happen
 - `create_context_template(food_name, verb, attribute_placeholder)` - Generate context following "This [Food] [Verb] [Attribute]" pattern
 
 ### Synthetic Data
-- `generate_synthetic_data(train_samples, eval_samples, graph, food_name, ...)` - Create training data from graph (supports custom graphs for any food; food_name auto-detects from graph root)
+- `generate_synthetic_data(train_samples, eval_samples, graph, food_name, ...)` - Create training data from graph (supports custom graphs for any food; food_name auto-extracts from graph.graph_name)
 
 ## FAQ
 
