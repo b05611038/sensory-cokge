@@ -407,7 +407,9 @@ def generate_synthetic_data(
         train_samples=50000,
         eval_samples=10000,
         output_dir='./outputs',
+        graph=None,
         graph_name='coffee_flavor_wheel(unduplicated)',
+        food_name='coffee',
         save_csv=True):
     """
     Generate synthetic training data for fine-tuning language models.
@@ -423,8 +425,14 @@ def generate_synthetic_data(
         Number of evaluation samples to generate. Default: 10000
     output_dir : str, optional
         Directory to save CSV files. Default: './outputs'
+    graph : DescriptionGraph, optional
+        Custom description graph. If None, uses default coffee flavor wheel
     graph_name : str, optional
-        Name of description graph to use. Default: 'coffee_flavor_wheel(unduplicated)'
+        Name of description graph to use (only used if graph is None).
+        Default: 'coffee_flavor_wheel(unduplicated)'
+    food_name : str, optional
+        Name of food product for generating text (e.g., 'wine', 'cheese').
+        Only used with custom graphs. Default: 'coffee'
     save_csv : bool, optional
         Whether to save data as CSV files. Default: True
 
@@ -436,18 +444,134 @@ def generate_synthetic_data(
 
     Examples
     --------
+    >>> # Example 1: Coffee flavor wheel (default)
     >>> data = generate_synthetic_data(train_samples=1000, eval_samples=100)
     >>> print(f"Generated {len(data['train'])} training samples")
     >>> print(f"First sample: {data['train'][0]['selections'][0]}")
+
+    >>> # Example 2: Custom wine graph
+    >>> wine_hierarchy = {
+    ...     'fruity': ['apple', 'pear', 'citrus'],
+    ...     'floral': ['rose', 'violet'],
+    ...     'spicy': ['pepper', 'cinnamon']
+    ... }
+    >>> wine_graph = build_graph_from_hierarchy(wine_hierarchy, root='wine')
+    >>> wine_data = generate_synthetic_data(
+    ...     train_samples=5000,
+    ...     eval_samples=500,
+    ...     graph=wine_graph,
+    ...     food_name='wine',
+    ...     output_dir='./wine_training_data'
+    ... )
     """
+    import random
+    import hashlib
+
     data_number = {'train': train_samples, 'eval': eval_samples}
 
-    generated_data = generate_finetune_data(
-        data_number=data_number,
-        graph_name=graph_name,
-        exclude_descriptions=NOT_COUNT_DESCRIPTIONS,
-        progress=True
-    )
+    # Helper function for hashing sampled combinations
+    def _simple_hash(sampled_list):
+        list_string = ','.join(map(str, sampled_list))
+        return hashlib.sha256(list_string.encode()).hexdigest()
+
+    # Helper function to construct a single data sample
+    def _construct_single_data(descriptions, graph_obj, food):
+        codes = [['one', 'two', 'three'], ['A', 'B', 'C'], ['alpha', 'beta', 'gamma']]
+        context = f'{food.capitalize()} {{0}} has {{1}} {{2}} flavors; '
+
+        code_names = random.sample(codes, 1)[0]
+        overlapping_text = ''
+        for des_idx in range(len(descriptions)):
+            description = descriptions[des_idx]
+            overlapping_text += context.format(code_names[des_idx], use_a_or_an(description), description)
+
+        distances = []
+        for i in range(len(descriptions)):
+            for j in range(i + 1, len(descriptions)):
+                distances.append(graph_obj.distance_between_descriptions(descriptions[i], descriptions[j]))
+
+        selections, ground_truth = [], -1
+        for i in range(len(descriptions)):
+            for j in range(i + 1, len(descriptions)):
+                non_include_idx = [k for k in range(len(descriptions))]
+                non_include_idx.remove(i)
+                non_include_idx.remove(j)
+                non_include_idx = non_include_idx[0]
+
+                compare_text = f'{{0}} {food} and {{1}} {food} taste more similar, while {{2}} {food} tastes different.'
+                compare_text = compare_text.format(code_names[i], code_names[j], code_names[non_include_idx])
+                selections.append(overlapping_text + compare_text)
+
+                if graph_obj.distance_between_descriptions(descriptions[i], descriptions[j]) <= min(distances):
+                    ground_truth = len(selections) - 1
+
+        similar_text = f'{{0}} {food}, {{1}} {food}, and {{2}} {food} all taste very similar.'
+        similar_text = similar_text.format(*tuple(code_names))
+        selections.append(overlapping_text + similar_text)
+        if max(distances) <= 2.:
+            ground_truth = len(selections) - 1
+
+        different_text = f'{{0}} {food}, {{1}} {food}, and {{2}} {food} all taste very different.'
+        different_text = different_text.format(*tuple(code_names))
+        selections.append(overlapping_text + different_text)
+        if min(distances) >= 20.:
+            ground_truth = len(selections) - 1
+
+        single_data = {'selections': selections,
+                      'ground_truth': ground_truth}
+
+        return single_data
+
+    if graph is None:
+        # Use default coffee flavor wheel
+        generated_data = generate_finetune_data(
+            data_number=data_number,
+            graph_name=graph_name,
+            exclude_descriptions=NOT_COUNT_DESCRIPTIONS,
+            progress=True
+        )
+    else:
+        # Use custom graph - replicate the logic from generate_finetune_data
+        descriptions = list(graph.descriptions)
+        if graph.root in descriptions:
+            descriptions.remove(graph.root)
+        description_index_list = [i for i in range(len(descriptions))]
+
+        generated_data = {}
+        already_sampled_combinations = []
+        total_sampled_number = 0
+        for set_name in data_number:
+            generated_data[set_name] = []
+            total_sampled_number += data_number[set_name]
+
+        all_generated_data = []
+        sample_number = 0
+        display_split = 100
+
+        while sample_number < total_sampled_number:
+            sampled_indices = random.sample(description_index_list, 3)
+            hashed_indices = _simple_hash(sampled_indices)
+            if hashed_indices in already_sampled_combinations:
+                continue
+
+            already_sampled_combinations.append(hashed_indices)
+            sampled_descriptions = [descriptions[i] for i in sampled_indices]
+            single_data = _construct_single_data(sampled_descriptions, graph, food_name)
+            all_generated_data.append(single_data)
+            sample_number += 1
+
+            if sample_number % display_split == 0:
+                print(f'Generation progress: {sample_number} / {total_sampled_number}')
+
+        start_index, end_index = 0, 0
+        for set_name in data_number:
+            set_number = data_number[set_name]
+            end_index += set_number
+
+            for idx in range(start_index, end_index):
+                generated_data[set_name].append(all_generated_data[idx])
+
+            start_index = end_index
 
     if save_csv:
         init_directory(output_dir)
